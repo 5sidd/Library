@@ -24,7 +24,7 @@ app.use(express.json());
 app.get('/books', async (req, res) => {
     try {
         const { isbn, title, author } = req.query;
-        let q = 'SELECT * FROM (SELECT * FROM (SELECT * FROM BOOK JOIN BOOK_AUTHORS ON BOOK.Isbn = BOOK_AUTHORS.Isbn AS AB) JOIN AUTHORS ON AB.Author_id = AUTHORS.Author_id AS BC) LEFT JOIN BOOK_LOANS ON BC.Isbn = BOOK_LOANS.Isbn';
+        let q = 'select CD.Isbn, Title, Author_id, `Name`, Loan_id from (select Isbn, Title, BC.Author_id, `Name` from (select BOOK.Isbn, Title, AB.Author_id from BOOK_AUTHORS as AB join BOOK on AB.Isbn = BOOK.Isbn) as BC join AUTHORS on BC.Author_id = AUTHORS.Author_id) as CD left join BOOK_LOANS on CD.Isbn = BOOK_LOANS.Isbn';
         let w = 'WHERE';
 
         if (isbn) {
@@ -97,6 +97,8 @@ app.get('/books/:id', async (req, res) => {
         res.status(500).json({ error });
     }
 });
+
+//Borrower Management
 
 const port = process.env.PORT || 3000;
 const start = () => {
