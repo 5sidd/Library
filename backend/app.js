@@ -75,43 +75,23 @@ app.get('/books', async (req, res) => {
     }
 });
 
-/*
-app.get('/books/:id', async (req, res) => {
-    try {
-        let isbn = req.params.id;
-        isbn = isbn.toString();
-
-        if (isbn.length !== 10 || !isbn.match(/^[a-z0-9]+$/i)) {
-            return res.status(400).json({ error: 'Invalid ISBN'});
-        }
-
-        let q = `SELECT * FROM BOOK WHERE Isbn = '${isbn}'`;
-        connection.query(q, (error, results, fields) => {
-            if (error) {
-                return res.status(500).json({ error });
-            }
-
-            if (results.length === 0) {
-                return res.status(404).json({ error: `Could not find a book with ISBN ${isbn}`});
-            }
-
-            return res.status(200).json({ books: results });
-        });
-    }
-    catch (error) {
-        console.log(error);
-        res.status(500).json({ error });
-    }
-});
-*/
-
-//Add new borrower to the database --> STILL IN PROGRESS
+//Add new borrower to the database
 app.post('/borrowers', async (req, res) => {
     try {
-        const { name, ssn, address, phone } = req.body;
+        const { ssn, name, address, phone } = req.body;
 
-        if (/^[a-zA-Z() ]+$/.test(name) === False) {
-            return res.status(400).json({ error: 'Name can only contain alphabetical letters'});
+        function generateCardID() {
+            id = '';
+            for (let i = 0; i < 20; i++) {
+                digit = Math.floor(Math.random() * 10);
+                id += digit.toString();
+            }
+
+            return id;
+        }
+
+        if (/^[a-zA-Z() ]+$/.test(name) === false) {
+            return res.status(400).json({ error: 'Name can only contain alphabetical letters' });
         }
 
         if (name.length > 100) {
@@ -119,7 +99,7 @@ app.post('/borrowers', async (req, res) => {
         }
 
         if (ssn.length === 11) {
-            if (/[0-9]{3}-[0-9]{3}-[0-9]{4}/.test(ssn) === false) {
+            if (/[0-9]{3}-[0-9]{2}-[0-9]{4}/.test(ssn) === false) {
                 return res.status(400).json({ error: 'Invalid SSN' });
             }
         }
@@ -133,18 +113,63 @@ app.post('/borrowers', async (req, res) => {
 
         if (phone.length === 10) {
             if (/[0-9]{10}/.test(phone) === false) {
-                return res.status(400).json({ error: 'Invalid phone number'});
+                return res.status(400).json({ error: 'Invalid phone number' });
             }
         }
         else {
-            return res.status(400).json({ error: 'Invalid phone number'});
+            return res.status(400).json({ error: 'Invalid phone number' });
         }
 
+        let isValidSSN = await new Promise((resolve) => {
+            connection.query(`SELECT * FROM BORROWER WHERE Ssn = '${ssn}'`, (error, results, fields) => {
+                if (error) {
+                    return res.status(500).json({ error });
+                }
+
+                resolve(results);
+            });
+        })
+
+        if (isValidSSN.length > 0) {
+            return res.status(400).json({ error: 'Given SSN already exists' });
+        }
+
+        let borrowers = await new Promise((resolve) => {
+            connection.query('select Card_id from BORROWER', (error, results) => {
+                if (error) {
+                    return res.status(500).json({ error });
+                }
+                resolve(results);
+            });
+        });
+
+        let allCardIDs = [];
+        for (let i = 0; i < borrowers.length; i++) {
+            allCardIDs.push(borrowers[i].Card_id);
+        }
+        let uniqueIDs = new Set(allCardIDs);
+
+        let cardID;
+        let isValid = false;
+        while (isValid === false) {
+            cardID = generateCardID();
+            if (uniqueIDs.has(cardID) === false) {
+                isValid = true;
+            }
+        }
+
+        connection.query(`INSERT INTO BORROWER VALUES ('${cardID}', '${ssn}', '${name}', '${address}', '${phone}')`, (error, results, fields) => {
+            if (error) {
+                return res.status(500).json({ error });
+            }
+
+            return res.status(201).json({ results });
+        });
 
     }
     catch (error) {
         console.log(error);
-        res.status(500).json({ error });
+        return res.status(500).json({ error });
     }
 });
 
