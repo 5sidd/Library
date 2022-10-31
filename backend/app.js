@@ -9,12 +9,15 @@ const connection = mysql.createConnection({
     user: process.env.USER,
     password: process.env.PASSWORD
 });
+
+/*
 connection.connect((error) => {
     if (error) {
         console.log(error);
     }
 });
 connection.query(`use Library`);
+*/
 
 app.use(express.json());
 
@@ -27,7 +30,7 @@ app.get('/books', async (req, res) => {
         let q = 'select CD.Isbn, Title, Author_id, `Name`, Loan_id from (select Isbn, Title, BC.Author_id, `Name` from (select BOOK.Isbn, Title, AB.Author_id from BOOK_AUTHORS as AB join BOOK on AB.Isbn = BOOK.Isbn) as BC join AUTHORS on BC.Author_id = AUTHORS.Author_id) as CD left join BOOK_LOANS on CD.Isbn = BOOK_LOANS.Isbn';
         let w = 'WHERE';
 
-        console.log(isbn, title, author);
+        //console.log(isbn, title, author);
 
         if (isbn) {
             if (w === 'WHERE') {
@@ -61,13 +64,18 @@ app.get('/books', async (req, res) => {
             q += w;
         }
 
-        connection.query(q, (error, results, fields) => {
-            if (error) {
-                return res.status(500).json({ error });
-            }
-
-            return res.status(200).json({ books: results });
+        let books = await new Promise((resolve, reject) => {
+            connection.query(q, (error, results, fields) => {
+                if (error) {
+                    reject(error);
+                }
+                else {
+                    resolve(results);
+                }
+            });
         });
+
+        return res.status(200).json({ books });
     }
     catch (error) {
         console.log(error);
@@ -120,26 +128,29 @@ app.post('/borrowers', async (req, res) => {
             return res.status(400).json({ error: 'Invalid phone number' });
         }
 
-        let isValidSSN = await new Promise((resolve) => {
+        let isValidSSN = await new Promise((resolve, reject) => {
             connection.query(`SELECT * FROM BORROWER WHERE Ssn = '${ssn}'`, (error, results, fields) => {
                 if (error) {
-                    return res.status(500).json({ error });
+                    reject(error)
                 }
-
-                resolve(results);
+                else {
+                    resolve(results);
+                }
             });
-        })
+        });
 
         if (isValidSSN.length > 0) {
             return res.status(400).json({ error: 'Given SSN already exists' });
         }
 
-        let borrowers = await new Promise((resolve) => {
+        let borrowers = await new Promise((resolve, reject) => {
             connection.query('select Card_id from BORROWER', (error, results) => {
                 if (error) {
-                    return res.status(500).json({ error });
+                    reject(error);
                 }
-                resolve(results);
+                else {
+                    resolve(results);
+                }
             });
         });
 
@@ -158,14 +169,18 @@ app.post('/borrowers', async (req, res) => {
             }
         }
 
-        connection.query(`INSERT INTO BORROWER VALUES ('${cardID}', '${ssn}', '${name}', '${address}', '${phone}')`, (error, results, fields) => {
-            if (error) {
-                return res.status(500).json({ error });
-            }
+        let finalResult = await new Promise((resolve, response) => {
+            connection.query(`INSERT INTO BORROWER VALUES ('${cardID}', '${ssn}', '${name}', '${address}', '${phone}')`, (error, results, fields) => {
+                if (error) {
+                    reject(error);
+                }
+                else {
+                    resolve(results);
+                }
+            });
+        }); 
 
-            return res.status(201).json({ results });
-        });
-
+        return res.status(201).json({ result: finalResult });
     }
     catch (error) {
         console.log(error);
@@ -174,10 +189,37 @@ app.post('/borrowers', async (req, res) => {
 });
 
 const port = process.env.PORT || 3000;
-const start = () => {
-    app.listen(port, () => {
-        console.log(`Server is listening on port ${port}`);
-    });
+const start = async () => {
+    try {
+        await new Promise((resolve, reject) => {
+            connection.connect((error) => {
+                if (error) {
+                    reject(error);
+                }
+                else {
+                    resolve();
+                }
+            });
+        });
+
+        await new Promise((resolve, reject) => {
+            connection.query(`use Library`, (error) => {
+                if (error) {
+                    reject(error);
+                }
+                else {
+                    resolve();
+                }
+            });
+        });
+
+        app.listen(port, () => {
+            console.log(`Server is listening on port ${port}`);
+        });
+    }
+    catch (error) {
+        console.log(error)
+    }
 }
 
 start();
