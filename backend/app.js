@@ -43,19 +43,19 @@ app.get('/books', async (req, res) => {
 
         if (title) {
             if (w === 'WHERE') {
-                w += ` UPPER(Title) LIKE UPPER('%${title}%')`;
+                w += ` UPPER(Title) LIKE UPPER("%${title}%")`;
             }
             else {
-                w += ` AND UPPER(Title) LIKE UPPER('%${title}%')`;
+                w += ` AND UPPER(Title) LIKE UPPER("%${title}%")`;
             }
         }
 
         if (author) {
             if (w === 'WHERE') {
-                w += ` UPPER(Name) LIKE UPPER('%${author}%')`;
+                w += ` UPPER(Name) LIKE UPPER("%${author}%")`;
             }
             else {
-                w += ` AND UPPER(Name) LIKE UPPER('%${author}%')`;
+                w += ` AND UPPER(Name) LIKE UPPER("%${author}%")`;
             }
         }
 
@@ -450,11 +450,56 @@ app.patch('/checkin', async (req, res) => {
 //Get Book Loans
 app.get('/bookloans', async (req, res) => {
     try {
+        const { isbn, cardID, bname } = req.query;
+        let q1 = 'select BORROWER.Card_id, Bname, Loan_id, Isbn, Date_out, Due_date from (select * from BOOK_LOANS where Date_in is null) as A join BORROWER on BORROWER.Card_id = A.Card_id';
+        let q2 = 'WHERE';
 
+        if (isbn) {
+            q2 += ` Isbn = "${isbn}"`;
+        }
+
+        if (cardID) {
+            if (q2 === 'WHERE') {
+                q2 += ` A.Card_id = "${cardID}"`;
+            }
+            else {
+                q2 += ` AND A.Card_id = "${cardID}"`;
+            }
+        }
+
+        if (bname) {
+            if (q2 === 'WHERE') {
+                q2 += ` UPPER(Bname) LIKE UPPER("%${bname}%")`;
+            }
+            else {
+                q2 += ` AND UPPER(Bname) LIKE UPPER("%${bname}%")`;
+            }
+        }
+
+        let q;
+        if (q2 === 'WHERE') {
+            q = q1;
+        }
+        else {
+            q = q1 + ' ' + q2;
+        }
+
+        let loans = await new Promise((resolve, reject) => {
+            connection.query(q, (error, results, fields) => {
+                if (error) {
+                    reject(error);
+                }
+                else {
+                    resolve(results);
+                }
+            });
+        });
+
+        return res.status(200).json({ loans });
     }
     catch (error) {
         console.log(error);
-        res.status(500).json({ error });
+        return res.status(500).json({ error });
     }
 });
 
