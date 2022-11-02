@@ -79,7 +79,7 @@ app.get('/books', async (req, res) => {
     }
     catch (error) {
         console.log(error);
-        res.status(500).json({ error });
+        return res.status(500).json({ error });
     }
 });
 
@@ -180,7 +180,7 @@ app.post('/borrowers', async (req, res) => {
             });
         });
 
-        return res.status(201).json({ result: finalResult });
+        return res.status(201).json({ message: 'Successfully added borrower!' });
     }
     catch (error) {
         console.log(error);
@@ -350,11 +350,111 @@ app.post('/checkout', async (req, res) => {
             });
         });
 
-        return res.status(201).json({ finalResult });
+        return res.status(201).json({ message: 'Successfully checked out book!' });
     }
     catch (error) {
         console.log(error);
         return res.status(500).json({ error });
+    }
+});
+
+//Check a book in
+app.patch('/checkin', async (req, res) => {
+    try {
+        const { loanID } = req.body;
+
+        let loanExists = await new Promise((resolve, reject) => {
+            connection.query(`SELECT * FROM BOOK_LOANS WHERE Loan_id = "${loanID}"`, (error, results, fields) => {
+                if (error) {
+                    reject(error);
+                }
+                else {
+                    resolve(results);
+                }
+            });
+        });
+
+        if (loanExists.length === 0) {
+            return res.status(400).json({ error: 'Invalid Loan ID or Loan ID does not exist' });
+        }
+
+        let isValidLoan = await new Promise((resolve, reject) => {
+            connection.query(`SELECT * FROM BOOK_LOANS WHERE Loan_id = "${loanID}" AND Date_in IS NULL`, (error, results, fields) => {
+                if (error) {
+                    reject(error);
+                }
+                else {
+                    resolve(results);
+                }
+            });
+        });
+
+        if (isValidLoan.length === 0) {
+            return res.status(400).json({ error: 'Book is already checked in' });
+        }
+
+        function getSQLDate(date) {
+            return new Date(
+                date.toLocaleString('en-US', {
+                    timeZone: 'America/Chicago',
+                }),
+            ).toDateString();
+
+            //return cstDate.toISOString().split('T')[0];
+        }
+
+        let today = new Date();
+        today = getSQLDate(today);
+
+        let monthsObject = {
+            'Jan': '01',
+            'Feb': '02',
+            'Mar': '03',
+            'Apr': '04',
+            'May': '05',
+            'Jun': '06',
+            'Jul': '07',
+            'Aug': '08',
+            'Sep': '09',
+            'Oct': '10',
+            'Nov': '11',
+            'Dec': '12'
+        };
+
+        let todayComponents = today.split(' ');
+        today = todayComponents[3] + '-' + monthsObject[todayComponents[1]] + '-' + todayComponents[2];
+
+        let q1 = 'UPDATE BOOK_LOANS';
+        let q2 = `SET Date_in = "${today}"`;
+        let q3 = `WHERE Loan_id = ${loanID}`;
+        q = q1 + ' ' + q2 + ' ' + q3;
+        let finalResult = await new Promise((resolve, reject) => {
+            connection.query(q, (error, results, fields) => {
+                if (error) {
+                    reject(error);
+                }
+                else {
+                    resolve(results);
+                }     
+            });
+        });
+
+        return res.status(200).json({ message: 'Successful Check In!' });
+    }
+    catch (error) {
+        console.log(error);
+        return res.status(500).json({ error });
+    }
+});
+
+//Get Book Loans
+app.get('/bookloans', async (req, res) => {
+    try {
+
+    }
+    catch (error) {
+        console.log(error);
+        res.status(500).json({ error });
     }
 });
 
@@ -390,6 +490,6 @@ const start = async () => {
     catch (error) {
         console.log(error)
     }
-}
+};
 
 start();
