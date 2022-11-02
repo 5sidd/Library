@@ -178,9 +178,179 @@ app.post('/borrowers', async (req, res) => {
                     resolve(results);
                 }
             });
-        }); 
+        });
 
         return res.status(201).json({ result: finalResult });
+    }
+    catch (error) {
+        console.log(error);
+        return res.status(500).json({ error });
+    }
+});
+
+//Check a book out
+app.post('/checkout', async (req, res) => {
+    try {
+        const { isbn, borrowerID } = req.body;
+
+        if (!isbn) {
+            return res.status(400).json({ error: 'Please provide an ISBN for the book to check out' });
+        }
+
+        if (!borrowerID) {
+            return res.status(400).json({ error: 'Please provide the card ID of the borrower' });
+        }
+
+        let requestedBook = await new Promise((resolve, reject) => {
+            connection.query(`SELECT * FROM BOOK WHERE Isbn = "${isbn}"`, (error, results, fields) => {
+                if (error) {
+                    reject(error);
+                }
+                else {
+                    resolve(results);
+                }
+            });
+        });
+
+        if (requestedBook.length === 0) {
+            return res.status(400).json({ error: 'Invalid ISBN or given ISBN does not exist' });
+        }
+
+        let requestedBorrower = await new Promise((resolve, reject) => {
+            connection.query(`SELECT * FROM BORROWER WHERE Card_id = "${borrowerID}"`, (error, results, fields) => {
+                if (error) {
+                    reject(error);
+                }
+                else {
+                    resolve(results);
+                }
+            });
+        });
+
+        if (requestedBorrower.length === 0) {
+            return res.status(400).json({ error: 'Invalid borrower card ID or card ID does not exist' });
+        }
+
+        let isBookCheckedOut = await new Promise((resolve, reject) => {
+            connection.query(`SELECT * FROM BOOK_LOANS WHERE Isbn = "${isbn}" AND Date_in IS NULL`, (error, results, fields) => {
+                if (error) {
+                    reject(error);
+                }
+                else {
+                    resolve(results);
+                }
+            });
+        });
+
+        if (isBookCheckedOut.length > 0) {
+            return res.status(400).json({ error: 'Requested book is currently checked out.' });
+        }
+
+        let hasReachedLimit = await new Promise((resolve, reject) => {
+            connection.query(`SELECT * FROM BOOK_LOANS WHERE Card_id = "${borrowerID}" and Date_in IS NULL`, (error, results, fields) => {
+                if (error) {
+                    reject(error);
+                }
+                else {
+                    resolve(results);
+                }
+            });
+        });
+
+        if (hasReachedLimit.length === 3) {
+            return res.status(400).json({ error: 'Cannot check out requested book since borrower has reached the check-out limit' });
+        }
+
+        function generateLoanID() {
+            let id = '';
+            for (let i = 0; i < 10; i++) {
+                let digit = Math.floor(Math.random() * 10);
+                id += digit.toString();
+            }
+            return id;
+        }
+
+        let allLoanIDs = await new Promise((resolve, reject) => {
+            connection.query(`SELECT Loan_id FROM BOOK_LOANS`, (error, results, fields) => {
+                if (error) {
+                    reject(error);
+                }
+                else {
+                    resolve(results);
+                }
+            });
+        });
+
+        let loanIDs = [];
+        for (let i = 0; i < allLoanIDs.length; i++) {
+            loanIDs.push(allLoanIDs[i].Loan_id);
+        }
+        let uniqueLoanIDs = new Set(loanIDs);
+
+        let loanID;
+        let isValid = false;
+        while (isValid === false) {
+            loanID = generateLoanID();
+            if (uniqueLoanIDs.has(loanID) === false) {
+                isValid = true;
+            }
+        }
+
+        function getSQLDate(date) {
+            return new Date(
+                date.toLocaleString('en-US', {
+                    timeZone: 'America/Chicago',
+                }),
+            ).toDateString();
+
+            //return cstDate.toISOString().split('T')[0];
+        }
+
+        let today = new Date();
+        let twoWeeksFromNow = new Date(Date.now() + 12096e5);
+
+        today = getSQLDate(today);
+        twoWeeksFromNow = getSQLDate(twoWeeksFromNow);
+
+        let monthsObject = {
+            'Jan': '01',
+            'Feb': '02',
+            'Mar': '03',
+            'Apr': '04',
+            'May': '05',
+            'Jun': '06',
+            'Jul': '07',
+            'Aug': '08',
+            'Sep': '09',
+            'Oct': '10',
+            'Nov': '11',
+            'Dec': '12'
+        };
+
+        let todayComponents = today.split(' ');
+        today = todayComponents[3] + '-' + monthsObject[todayComponents[1]] + '-' + todayComponents[2];
+
+        let twoWeeksFromNowComponents = twoWeeksFromNow.split(' ');
+        twoWeeksFromNow = twoWeeksFromNowComponents[3] + '-' + monthsObject[twoWeeksFromNowComponents[1]] + '-' + twoWeeksFromNowComponents[2];
+
+        //console.log(today);
+        //console.log(twoWeeksFromNow);
+
+        let q1 = `INSERT INTO BOOK_LOANS (Loan_id, Isbn, Card_id, Date_out, Due_date)`;
+        let q2 = `VALUES ("${loanID}", "${isbn}", "${borrowerID}", "${today}", "${twoWeeksFromNow}")`;
+        let q = q1 + ' ' + q2;
+        let finalResult = await new Promise((resolve, reject) => {
+            connection.query(q, (error, results, fields) => {
+                if (error) {
+                    reject(error);
+                }
+                else {
+                    resolve(results);
+                }
+            });
+        });
+
+        return res.status(201).json({ finalResult });
     }
     catch (error) {
         console.log(error);
