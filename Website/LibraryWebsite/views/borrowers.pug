@@ -1,0 +1,54 @@
+extends layout
+
+block content
+    html.
+        <head>
+            <link rel="stylesheet" href="http://unpkg.com/@progress/kendo-theme-bootstrap/dist/all.css" />
+            <script src="https://kendo.cdn.telerik.com/2022.3.913/js/kendo.all.min.js"></script>
+        </head>
+        <body style="padding: 10px">
+            <div class="ui grid">
+                <div class="row">
+                    <div class="ui fifteen wide column">
+                        <h2>Borrowers</h2>
+                    </div>
+                </div>
+            </div>
+            <br>
+            <div id="grid"></div>
+        </body>
+
+    script.
+        $(document).ready(function() {
+            $("#borrowerbutton").removeClass("lightgrey");
+            $("#borrowerbutton").addClass("grey");
+
+            var crudServiceBaseUrl = "https://demos.telerik.com/kendo-ui/service",
+                    dataSource = new kendo.data.DataSource({
+                        data: [
+                            { isbn: "0002005018", title: "Clara Callan: A Novel"},
+                            { isbn: "0002740230", title: "Keep It Simple: And Get More Out Of Life"},
+                            { isbn: "0007100221", title: "Terror Firma"},
+                        ]
+                    });
+
+                $("#grid").kendoGrid({
+                    dataSource: dataSource,
+                    columnMenu: {
+                        filterable: false
+                    },
+                    height: 680,
+                    pageable: true,
+                    sortable: true,
+                    navigatable: true,
+                    resizable: true,
+                    filterable: true,
+                    toolbar: [{template: '<span class="k-searchbox k-input k-input-md k-rounded-md k-input-solid k-grid-search"><span class="k-input-icon k-icon k-i-search"></span><input autocomplete="off" placeholder="Search..." title="Search..." aria-label="Search..." class="k-input-inner"></span>'}],
+                    columns: [
+                        { field: "isbn", title: "ISBN" },
+                        { field: "title", title: "Title" },
+                        { field: "author", title: "Author" }
+                    ],
+                });
+        });
+        

@@ -19,6 +19,7 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 app.use("/jquery", express.static(path.join(__dirname, "/node_modules/jQuery/dist")));
+app.use("/semantic/dist", express.static(path.join(__dirname, "/node_modules/semantic-ui/")));
 
 app.use('/', indexRouter);
 app.use('/users', usersRouter);
