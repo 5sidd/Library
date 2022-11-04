@@ -2,6 +2,13 @@ const express = require('express');
 const app = express();
 require('dotenv').config();
 
+// Disable CORS policy to allow to run with frontend
+app.use(function(req, res, next) {
+    res.header("Access-Control-Allow-Origin", "*");
+    res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+    next();
+});
+
 //DB info
 const mysql = require('mysql');
 const connection = mysql.createConnection({
@@ -503,7 +510,7 @@ app.get('/bookloans', async (req, res) => {
     }
 });
 
-const port = process.env.PORT || 3000;
+const port = process.env.PORT || 4000;
 const start = async () => {
     try {
         await new Promise((resolve, reject) => {

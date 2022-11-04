@@ -25,14 +25,25 @@ block content
 
             console.log()
 
-            var crudServiceBaseUrl = "https://demos.telerik.com/kendo-ui/service",
-                    dataSource = new kendo.data.DataSource({
-                        data: [
-                            { isbn: "0002005018", title: "Clara Callan: A Novel"},
-                            { isbn: "0002740230", title: "Keep It Simple: And Get More Out Of Life"},
-                            { isbn: "0007100221", title: "Terror Firma"},
-                        ]
-                    });
+            var dataSource = new kendo.data.DataSource({
+                    transport: {
+                        read: {
+                            url: "http://localhost:4000/books",
+                            dataType: "json"
+                        }
+                    },
+                    schema: {
+                        type: "json",
+                        data: "books",
+                        model: {
+                            fields: {
+                                Isbn: { field: "Isbn", type: "string" },
+                                Title: { field: "Title", type: "string" },
+                                Author: { field: "Name", type: "string" }
+                            }  
+                        }
+                    }
+                });
 
                 $("#grid").kendoGrid({
                     dataSource: dataSource,
@@ -47,9 +58,9 @@ block content
                     filterable: true,
                     toolbar: [{template: '<span class="k-searchbox k-input k-input-md k-rounded-md k-input-solid k-grid-search"><span class="k-input-icon k-icon k-i-search"></span><input autocomplete="off" placeholder="Search..." title="Search..." aria-label="Search..." class="k-input-inner"></span>'}],
                     columns: [
-                        { field: "isbn", title: "ISBN", width: "200px" },
-                        { field: "title", title: "Title" },
-                        { field: "author", title: "Author", width: "250px" }
+                        { field: "Isbn", title: "ISBN", width: "200px" },
+                        { field: "Title", title: "Title", width: "775px" },
+                        { field: "Author", title: "Author"}
                     ],
                 });
         });
