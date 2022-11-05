@@ -1,3 +1,4 @@
+const { response } = require('express');
 const express = require('express');
 const app = express();
 require('dotenv').config();
@@ -34,13 +35,13 @@ app.use(express.json());
 app.get('/books', async (req, res) => {
     try {
         const { isbn, title, author } = req.query;
-        let q = 'select CD.Isbn, Title, Author_id, `Name`, Loan_id from (select Isbn, Title, BC.Author_id, `Name` from (select BOOK.Isbn, Title, AB.Author_id from BOOK_AUTHORS as AB join BOOK on AB.Isbn = BOOK.Isbn) as BC join AUTHORS on BC.Author_id = AUTHORS.Author_id) as CD left join BOOK_LOANS on CD.Isbn = BOOK_LOANS.Isbn';
-        let w = 'WHERE';
+        let q1 = 'select CD.Isbn, Title, Author_id, `Name`, Loan_id, Date_in from (select Isbn, Title, BC.Author_id, `Name` from (select BOOK.Isbn, Title, AB.Author_id from BOOK_AUTHORS as AB join BOOK on AB.Isbn = BOOK.Isbn) as BC join AUTHORS on BC.Author_id = AUTHORS.Author_id) as CD left join BOOK_LOANS on CD.Isbn = BOOK_LOANS.Isbn';
+        let w = 'WHERE Date_in IS NULL';
 
         //console.log(isbn, title, author);
 
         if (isbn) {
-            if (w === 'WHERE') {
+            if (w === 'WHERE Date_in IS NULL') {
                 w += ` Isbn = ${isbn}`
             }
             else {
@@ -49,7 +50,7 @@ app.get('/books', async (req, res) => {
         }
 
         if (title) {
-            if (w === 'WHERE') {
+            if (w === 'WHERE Date_in IS NULL') {
                 w += ` UPPER(Title) LIKE UPPER("%${title}%")`;
             }
             else {
@@ -58,7 +59,7 @@ app.get('/books', async (req, res) => {
         }
 
         if (author) {
-            if (w === 'WHERE') {
+            if (w === 'WHERE Date_in IS NULL') {
                 w += ` UPPER(Name) LIKE UPPER("%${author}%")`;
             }
             else {
@@ -66,13 +67,39 @@ app.get('/books', async (req, res) => {
             }
         }
 
-        if (w !== 'WHERE') {
-            q += ' ';
-            q += w;
+        if (w !== 'WHERE Date_in IS NULL') {
+            q1 += ' ';
+            q1 += w;
         }
 
-        let books = await new Promise((resolve, reject) => {
-            connection.query(q, (error, results, fields) => {
+        let resultBooks = [];
+        let checkedOutBooks = await new Promise((resolve, reject) => {
+            connection.query(q1, (error, results, fields) => {
+                if (error) {
+                    reject(error);
+                }
+                else {
+                    resolve(results);
+                }
+            });
+        });
+        
+        let checkedOutBooksSet = new Set();
+        for (let i = 0; i < checkedOutBooks.length; i++) {
+            resultBooks.push(checkedOutBooks[i]);
+            checkedOutBooksSet.add(checkedOutBooks[i].Isbn);
+        }
+
+        let q2;
+        if (w !== "WHERE Date_in IS NULL") {
+            q2 = "WHERE " + w.substring(21); 
+        }
+        else {
+            q2 = q1;
+        }
+
+        let allBooks = new Promise((resolve, reject) => {
+            connection.query(q2, (error, results, fields) => {
                 if (error) {
                     reject(error);
                 }
@@ -82,7 +109,36 @@ app.get('/books', async (req, res) => {
             });
         });
 
-        return res.status(200).json({ books });
+        console.log(checkedOutBooksSet);
+        for (let i = 0; i < allBooks.length; i++) {
+            if (checkedOutBooksSet.has(allBooks[i].Isbn) === false) {
+                resultBooks.push(allBooks[i]);
+            }
+        }
+
+        return res.status(200).json({ books: resultBooks });
+    }
+    catch (error) {
+        console.log(error);
+        return res.status(500).json({ error });
+    }
+});
+
+//Get all borrowers
+app.get('/borrowers', async (req, res) => {
+    try {
+        let borrowers = await new Promise((resolve, reject) => {
+            connection.query("SELECT * FROM BORROWER", (error, results, fields) => {
+                if (error) {
+                    reject(error);
+                }
+                else {
+                    resolve(results);
+                }
+            });
+        });
+
+        return res.status(200).json({ borrowers });
     }
     catch (error) {
         console.log(error);
@@ -442,9 +498,73 @@ app.patch('/checkin', async (req, res) => {
                 }
                 else {
                     resolve(results);
-                }     
+                }
             });
         });
+
+        function dateDifference(currentDate, dueDate) {
+            currentDate = new Date(currentDate);
+            dueDate = new Date(dueDate);
+
+            const diffTime = currentDate - dueDate;
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            return diffDays;
+        }
+
+        let loanDueDate = await new Promise((resolve, reject) => {
+            connection.query(`SELECT Due_date FROM BOOK_LOANS WHERE Loan_id = "${loanID}"`, (error, results, fields) => {
+                if (error) {
+                    reject(error);
+                }
+                else {
+                    resolve(results);
+                }
+            });
+        });
+
+        let differenceInDates = dateDifference(today, loanDueDate);
+
+        if (differenceInDates > 0) {
+            let updatedFineAmt = 0.25 * differenceInDates;
+
+            let existsInFines = await new Promise((resolve, reject) => {
+                connection.query(`SELECT * FROM FINES WHERE Loan_id = "${loanID}"`, (error, results, fields) => {
+                    if (error) {
+                        reject(error);
+                    }
+                    else {
+                        resolve(error);
+                    }
+                });
+            });
+
+            if (existsInFines.length > 0) {
+                let updateQuery = `UPDATE FINES SET Fine_amt = ${updatedFineAmt} WHERE Loan_id = "${loanID}"`;
+                let modifyFine = await new Promise((resolve, reject) => {
+                    connection.query(updateQuery, (error, results, fields) => {
+                        if (error) {
+                            reject(error);
+                        }
+                        else {
+                            resolve(results);
+                        }
+                    });
+                });
+            }
+            else {
+                let insertQuery = `INSERT INTO FINES VALUES ("${loanID}", ${updatedFineAmt}, "${today}")`;
+                let addFine = await new Promise((resolve, reject) => {
+                    connection.query(insertQuery, (error, results, fields) => {
+                        if (error) {
+                            reject(error);
+                        }
+                        else {
+                            resolve(results);
+                        }
+                    });
+                });
+            }
+        }
 
         return res.status(200).json({ message: 'Successful Check In!' });
     }
@@ -510,7 +630,182 @@ app.get('/bookloans', async (req, res) => {
     }
 });
 
-const port = process.env.PORT || 4000;
+app.patch('/updateloans', async (req, res) => {
+    try {
+        function getSQLDate(date) {
+            return new Date(
+                date.toLocaleString('en-US', {
+                    timeZone: 'America/Chicago',
+                }),
+            ).toDateString();
+
+            //return cstDate.toISOString().split('T')[0];
+        }
+
+        let today = new Date();
+        today = getSQLDate(today);
+
+        let monthsObject = {
+            'Jan': '01',
+            'Feb': '02',
+            'Mar': '03',
+            'Apr': '04',
+            'May': '05',
+            'Jun': '06',
+            'Jul': '07',
+            'Aug': '08',
+            'Sep': '09',
+            'Oct': '10',
+            'Nov': '11',
+            'Dec': '12'
+        };
+
+        let todayComponents = today.split(' ');
+        today = todayComponents[3] + '-' + monthsObject[todayComponents[1]] + '-' + todayComponents[2];
+
+        let q1 = `SELECT Loan_id, Due_date FROM BOOK_LOANS`;
+        let q2 = `JOIN FINES ON BOOK_LOANS.Loan_id = FINES.Loan_id`;
+        let q3 = `WHERE Date_in IS NULL AND DATE(${today}) > DATE(Due_date)`;
+
+        q = q1 + ' ' + q2 + ' ' + q3;
+        let existingPastDueFines = await new Promise((resolve, reject) => {
+            connection.query(q, (error, results, fields) => {
+                if (error) {
+                    reject(error);
+                }
+                else {
+                    resolve(results);
+                }
+            });
+        });
+
+        function dateDifference(currentDate, dueDate) {
+            currentDate = new Date(currentDate);
+            dueDate = new Date(dueDate);
+
+            const diffTime = currentDate - dueDate;
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            return diffDays;
+        }
+
+        let existingPastDueFinesSet = [];
+        for (let i = 0; i <= existingPastDueFines.length; i++) {
+            let differenceInDates = dateDifference(today, existingPastDueFines[i].Due_date);
+            let updatedFineAmt = differenceInDates * 0.25;
+            let updateQuery = `UPDATE FINES Fine_amt = ${updatedFineAmt} WHERE Loan_id = "${existingPastDueFines[i].Loan_id}"`;
+
+            await new Promise((resolve, reject) => {
+                connection.query(updateQuery, (error, results, fields) => {
+                    if (error) {
+                        reject(error);
+                    }
+                    else {
+                        resolve(results);
+                    }
+                });
+            });
+
+            existingPastDueFinesSet.push(existingPastDueFines[i].Loan_id);
+        }
+        existingPastDueFinesSet = new Set(existingPastDueFinesSet);
+
+        let newLoansQuery = `SELECT Loan_id, Due_date FROM BOOK_LOANS WHERE Date_in IS NULL AND DATE(${today}) > DATE(Due_date)`;
+        let allLoansPastDueNotReturned = await new Promise((resolve, reject) => {
+            connection.query(newLoansQuery, (error, results, fields) => {
+                if (error) {
+                    reject(error);
+                }
+                else {
+                    resolve(results);
+                }
+            });
+        });
+
+        for (let i = 0; i < allLoansPastDueNotReturned.length; i++) {
+            if (existingPastDueFinesSet.has(allLoansPastDueNotReturned[i].Loan_id) === false) {
+                let differenceInDates = dateDifference(today, allLoansPastDueNotReturned[i].Due_date);
+                let fineAmt = differenceInDates * 0.25;
+                let insertNewLoanQuery = `INSERT INTO FINES (Loan_id, Fine_amt) VALUES ("${allLoansPastDueNotReturned[i].Loan_id}", ${fineAmt})`;
+
+                await new Promise((resolve, reject) => {
+                    connection.query(insertNewLoanQuery, (error, results, fields) => {
+                        if (error) {
+                            reject(error);
+                        }
+                        else {
+                            resolve(results);
+                        }
+                    });
+                });
+            }
+        }
+    }
+    catch (error) {
+        console.log(error);
+        return res.status(500).json({ error });
+    }
+});
+
+app.patch('/submitpayment', async (req, res) => {
+    try {
+        const { loanID } = req.body;
+
+        let doesLoanExist = await new Promise((resolve, reject) => {
+            connection.query(`SELECT * FROM FINES WHERE Loan_id = "${loanID}"`, (error, results, fields) => {
+                if (error) {
+                    reject(error);
+                }
+                else {
+                    resolve(results);
+                }
+            });
+        });
+
+        if (doesLoanExist.length === 0) {
+            return res.status(400).json({ error: 'Fine with given Loan ID does not exist' });
+        }
+
+        let today = new Date();
+        today = getSQLDate(today);
+
+        let monthsObject = {
+            'Jan': '01',
+            'Feb': '02',
+            'Mar': '03',
+            'Apr': '04',
+            'May': '05',
+            'Jun': '06',
+            'Jul': '07',
+            'Aug': '08',
+            'Sep': '09',
+            'Oct': '10',
+            'Nov': '11',
+            'Dec': '12'
+        };
+
+        let todayComponents = today.split(' ');
+        today = todayComponents[3] + '-' + monthsObject[todayComponents[1]] + '-' + todayComponents[2];
+
+        await new Promise((resolve, reject) => {
+            connection.query(`UPDATE FINES Paid = "${today}" WHERE Loan_id = "${loanID}"`, (error, results, fields) => {
+                if (error) {
+                    reject(error)
+                }
+                else {
+                    resolve(results);
+                }
+            });
+        });
+
+        return res.status(200).json({ message: 'Fine was successfully paid! '});
+    }
+    catch (error) {
+        console.log(error);
+        res.status(500).json({ error });
+    }
+});
+
+const port = process.env.PORT || 3000;
 const start = async () => {
     try {
         await new Promise((resolve, reject) => {
