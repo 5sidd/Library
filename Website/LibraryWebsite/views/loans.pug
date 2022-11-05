@@ -10,7 +10,7 @@ block content
             <div class="ui grid">
                 <div class="row">
                     <div class="ui fifteen wide column">
-                        <h2>Borrowers</h2>
+                        <h2>Loans</h2>
                     </div>
                 </div>
             </div>
@@ -20,26 +20,35 @@ block content
 
     script.
         $(document).ready(function() {
-            $("#borrowerbutton").removeClass("lightgrey");
-            $("#borrowerbutton").addClass("grey");
+            $("#loansbutton").removeClass("lightgrey");
+            $("#loansbutton").addClass("grey");
 
             var dataSource = new kendo.data.DataSource({
                 transport: {
                     read: {
-                        url: "http://localhost:4000/borrowers",
-                        dataType: "json",
+                        url: "http://localhost:4000/books",
+                        dataType: "json"
                     }
                 },
+                batch: false,
                 schema: {
-                    type: "json",
+                    id: "Isbn",
+                    data: function(data) {
+                        for(var i = 0; i < data.books.length; i++) {
+                            // Have some logic here for checking whether a book is checked in
+                            // Maybe add a button?
+                            data.books[i].CheckedIn = true;
+                        }
+
+                        return data.books;
+                    },
                     model: {
                         fields: {
-                            CardID: { field: "Card_id", type: "string" },
-                            Ssn: { type:"string" },
-                            Name: { field: "Bname", type: "string" },
-                            Address: { type: "string" },
-                            Phone: { type: "string" }
-                        }   
+                            Isbn: { type: "string" },
+                            Title: { type: "string" },
+                            Author: { field:"Name", type: "string" },
+                            CheckedIn: {  type: "boolean" }
+                        }  
                     }
                 }
             });
@@ -51,16 +60,20 @@ block content
                 },
                 height: 680,
                 pageable: true,
+                persistSelection: true,
                 sortable: true,
-                navigatable: true,
                 resizable: true,
                 filterable: true,
+                change: function (arg) {
+                    console.log(arg);
+                },
                 toolbar: [{template: '<span class="k-searchbox k-input k-input-md k-rounded-md k-input-solid k-grid-search"><span class="k-input-icon k-icon k-i-search"></span><input autocomplete="off" placeholder="Search..." title="Search..." aria-label="Search..." class="k-input-inner"></span>'}],
                 columns: [
-                    { field: "CardID", title: "CardID", width: "200px" },
-                    { field: "Name", title: "Name", width: "775px" },
-                    { field: "Address", title: "Address"},
-                    { field: "Phone", title: "Phone" }
+                    { selectable: true, width: "50px" },
+                    { field: "Isbn", title: "ISBN", width: "200px" },
+                    { field: "Title", title: "Title", width: "775px" },
+                    { field: "Author", title: "Author"},
+                    { field: "CheckedIn", title: "Checked In" }
                 ],
             });
         });

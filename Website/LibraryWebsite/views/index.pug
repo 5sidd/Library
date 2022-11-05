@@ -26,41 +26,43 @@ block content
             console.log()
 
             var dataSource = new kendo.data.DataSource({
-                    transport: {
-                        read: {
-                            url: "http://localhost:4000/books",
-                            dataType: "json"
-                        }
-                    },
-                    schema: {
-                        type: "json",
-                        data: "books",
-                        model: {
-                            fields: {
-                                Isbn: { field: "Isbn", type: "string" },
-                                Title: { field: "Title", type: "string" },
-                                Author: { field: "Name", type: "string" }
-                            }  
-                        }
+                transport: {
+                    read: {
+                        url: "http://localhost:4000/books",
+                        dataType: "json",
                     }
-                });
+                },
+                schema: {
+                    type: "json",
+                    data: "books",
+                    model: {
+                        fields: {
+                            Isbn: { type: "string" },
+                            Title: { type: "string" },
+                            Author: { field: "Name", type: "string" },
+                            Availibility: { type: "string" }
+                        }  
+                    }
+                }
+            });
 
-                $("#grid").kendoGrid({
-                    dataSource: dataSource,
-                    columnMenu: {
-                        filterable: false
-                    },
-                    height: 680,
-                    pageable: true,
-                    sortable: true,
-                    navigatable: true,
-                    resizable: true,
-                    filterable: true,
-                    toolbar: [{template: '<span class="k-searchbox k-input k-input-md k-rounded-md k-input-solid k-grid-search"><span class="k-input-icon k-icon k-i-search"></span><input autocomplete="off" placeholder="Search..." title="Search..." aria-label="Search..." class="k-input-inner"></span>'}],
-                    columns: [
-                        { field: "Isbn", title: "ISBN", width: "200px" },
-                        { field: "Title", title: "Title", width: "775px" },
-                        { field: "Author", title: "Author"}
-                    ],
-                });
+            $("#grid").kendoGrid({
+                dataSource: dataSource,
+                columnMenu: {
+                    filterable: false
+                },
+                height: 680,
+                pageable: true,
+                sortable: true,
+                navigatable: true,
+                resizable: true,
+                filterable: true,
+                toolbar: [{template: '<span class="k-searchbox k-input k-input-md k-rounded-md k-input-solid k-grid-search"><span class="k-input-icon k-icon k-i-search"></span><input autocomplete="off" placeholder="Search..." title="Search..." aria-label="Search..." class="k-input-inner"></span>'}],
+                columns: [
+                    { field: "Isbn", title: "ISBN", width: "200px" },
+                    { field: "Title", title: "Title", width: "775px" },
+                    { field: "Author", title: "Author" },
+                    { field: "Availibility", title: "Availibility"}
+                ],
+            });
         });

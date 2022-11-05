@@ -14,6 +14,9 @@ body
                 button(class="ui fluid lightgrey button" id="bookbutton") Books
                 br
                 br
+                button(class="ui fluid lightgrey button" id="loansbutton") Loans
+                br
+                br
                 button(class="ui fluid lightgrey button" id="borrowerbutton") Borrowers
                 br
                 br
@@ -26,6 +29,9 @@ script.
     $(document).ready(function() {
         $("#bookbutton").click(function () {
             window.location.replace("/books");
+        });
+        $("#loansbutton").click(function () {
+            window.location.replace("/loans");
         });
         $("#borrowerbutton").click(function () {
             window.location.replace("/borrowers");

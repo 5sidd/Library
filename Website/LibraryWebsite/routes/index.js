@@ -10,6 +10,10 @@ router.get('/books', function(req, res, next) {
     res.render('index', { title: 'Express' });
   });
 
+router.get('/loans', function(req, res, next) {
+    res.render('loans', { title: 'Express' });
+});
+
 router.get('/borrowers', function(req, res, next) {
     res.render('borrowers', { title: 'Express' });
 });
