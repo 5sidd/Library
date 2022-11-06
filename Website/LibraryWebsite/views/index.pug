@@ -15,10 +15,6 @@ block content
                 </div>
             </div>
             <br>
-            <button class="ui primary button" id="checkoutButton">
-                Checkout
-            </button>
-            <br>
             <div id="grid"></div>
         </body>
         <div class="ui small modal">
@@ -28,10 +24,10 @@ block content
             <div class="content">
                 <form class="ui form">
                     <div class="inline field">
-                        <label>Book Name: </label>
+                        <label>Book Title: </label>
                         <p id="bookName"></p>
                     </div>
-                    <br><br>
+                    <br>
                     <div class="inline fields">
                         <div class="field">
                             <label>Borrower:</label>
@@ -69,13 +65,25 @@ block content
                 },
                 schema: {
                     type: "json",
-                    data: "books",
+                    data: function(data) {
+                        data = data.books;
+                        //NOT (bl.Date_in IS NULL AND bl.Date_out IS NOT NULL) OR Date_out IS NULL
+                        for(var i = 0; i < data.length; i++) {
+                            var book = data[i];
+                            var available = (book.Date_in == null && book.Date_out != null || book.Date_out == null);
+                            book.Availability = available ? "Yes" : "No";
+                            data[i] = book;
+                        }
+
+                        console.log(data);
+                        return data;
+                    },
                     model: {
                         fields: {
                             Isbn: { type: "string" },
                             Title: { type: "string" },
-                            Author: { field: "Name", type: "string" },
-                            Availibility: { type: "boolean" }
+                            Author: { type: "string" },
+                            Availibility: { type: "string" }
                         }  
                     }
                 }
@@ -87,7 +95,7 @@ block content
                     filterable: false
                 },
                 height: 680,
-                pageable: true,
+                pageable: false,
                 sortable: true,
                 navigatable: true,
                 resizable: true,
@@ -97,7 +105,7 @@ block content
                     { field: "Isbn", title: "ISBN", width: "130px" },
                     { field: "Title", title: "Title", width: "500px" },
                     { field: "Author", title: "Author", width: "180px" },
-                    { field: "Availibility", title: "Availibility", width: "130px" },
+                    { field: "Availability", title: "Available", width: "130px" },
                     { title: "Checkout", command: {text: "Checkout", click: showCheckoutModal} }
                 ],
             });
