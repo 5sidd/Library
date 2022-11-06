@@ -35,13 +35,17 @@ block content
                                 <input type="hidden" name="borrower">
                                 <div class="default text">Borrower</div>
                                 <i class="dropdown icon"></i>
-                                <div class="menu">
+                                <div class="menu" id="borrowerDropdownMenu">
                                     <div class="item" data-value="1">Borrower 1</div>
                                     <div class="item" data-value="0">Borrower 2</div>
                                 </div>
                             </div>
                         </div>
                     </div>
+                    <br>
+                    <button class="ui primary button">
+                        Submit
+                    </button>
                 </form>
             </div>
         </div>
@@ -67,7 +71,6 @@ block content
                     type: "json",
                     data: function(data) {
                         data = data.books;
-                        //NOT (bl.Date_in IS NULL AND bl.Date_out IS NOT NULL) OR Date_out IS NULL
                         for(var i = 0; i < data.length; i++) {
                             var book = data[i];
                             var available = (book.Date_in == null && book.Date_out != null || book.Date_out == null);
@@ -83,7 +86,7 @@ block content
                             Isbn: { type: "string" },
                             Title: { type: "string" },
                             Author: { type: "string" },
-                            Availibility: { type: "string" }
+                            Availability: { type: "string" }
                         }  
                     }
                 }
@@ -121,8 +124,24 @@ block content
             $(".modal").modal({
                 autofocus: false
             }).modal("show");
+
+            getBorrowers();
         }
 
         function getBorrowers() {
-
+            $.ajax({
+                url: "http://localhost:4000/borrowers",
+                type: "GET",
+                success: function(data) {                        
+                    data = data.borrowers;
+                    console.log(data);
+                    var htmlText = "";
+                    for(var i = 0; i < data.length; i++) {
+                        var borrower = data[i];
+                        htmlText += "<div class=\"item\" data-value=\"" + borrower.Card_id +"\">" + borrower.Bname + "</div>"
+                    }
+                    console.log(htmlText);
+                    $("#borrowerDropdownMenu").html(htmlText);
+                }
+            });
         }
