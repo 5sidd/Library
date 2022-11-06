@@ -15,15 +15,50 @@ block content
                 </div>
             </div>
             <br>
+            <button class="ui primary button" id="checkoutButton">
+                Checkout
+            </button>
+            <br>
             <div id="grid"></div>
         </body>
+        <div class="ui small modal">
+            <div class="header">
+                Checkout Book
+            </div>
+            <div class="content">
+                <form class="ui form">
+                    <div class="inline field">
+                        <label>Book Name: </label>
+                        <p id="bookName"></p>
+                    </div>
+                    <br><br>
+                    <div class="inline fields">
+                        <div class="field">
+                            <label>Borrower:</label>
+                            <div class="ui search selection dropdown">
+                                <input type="hidden" name="borrower">
+                                <div class="default text">Borrower</div>
+                                <i class="dropdown icon"></i>
+                                <div class="menu">
+                                    <div class="item" data-value="1">Borrower 1</div>
+                                    <div class="item" data-value="0">Borrower 2</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
 
     script.
         $(document).ready(function() {
+            $(".dropdown").dropdown();
             $("#bookbutton").removeClass("lightgrey");
             $("#bookbutton").addClass("grey");
 
-            console.log()
+            $("#checkoutButton").click(function () {
+                $(".modal").modal("show");
+            });
 
             var dataSource = new kendo.data.DataSource({
                 transport: {
@@ -40,7 +75,7 @@ block content
                             Isbn: { type: "string" },
                             Title: { type: "string" },
                             Author: { field: "Name", type: "string" },
-                            Availibility: { type: "string" }
+                            Availibility: { type: "boolean" }
                         }  
                     }
                 }
@@ -59,10 +94,27 @@ block content
                 filterable: true,
                 toolbar: [{template: '<span class="k-searchbox k-input k-input-md k-rounded-md k-input-solid k-grid-search"><span class="k-input-icon k-icon k-i-search"></span><input autocomplete="off" placeholder="Search..." title="Search..." aria-label="Search..." class="k-input-inner"></span>'}],
                 columns: [
-                    { field: "Isbn", title: "ISBN", width: "200px" },
-                    { field: "Title", title: "Title", width: "775px" },
-                    { field: "Author", title: "Author" },
-                    { field: "Availibility", title: "Availibility"}
+                    { field: "Isbn", title: "ISBN", width: "130px" },
+                    { field: "Title", title: "Title", width: "500px" },
+                    { field: "Author", title: "Author", width: "180px" },
+                    { field: "Availibility", title: "Availibility", width: "130px" },
+                    { title: "Checkout", command: {text: "Checkout", click: showCheckoutModal} }
                 ],
             });
         });
+
+        function showCheckoutModal(e) {
+            e.preventDefault();
+
+            var dataItem = this.dataItem($(e.currentTarget).closest("tr"));
+            console.log(dataItem);
+            $("#bookName").html(dataItem.Title);
+
+            $(".modal").modal({
+                autofocus: false
+            }).modal("show");
+        }
+
+        function getBorrowers() {
+
+        }
