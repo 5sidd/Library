@@ -35,22 +35,21 @@ app.use(express.json());
 app.get('/books', async (req, res) => {
     try {
         const { isbn, title, author } = req.query;
-        let q1 = 'select CD.Isbn, Title, Author_id, `Name`, Loan_id, Date_in from (select Isbn, Title, BC.Author_id, `Name` from (select BOOK.Isbn, Title, AB.Author_id from BOOK_AUTHORS as AB join BOOK on AB.Isbn = BOOK.Isbn) as BC join AUTHORS on BC.Author_id = AUTHORS.Author_id) as CD left join BOOK_LOANS on CD.Isbn = BOOK_LOANS.Isbn';
-        let w = 'WHERE Date_in IS NULL';
-
-        //console.log(isbn, title, author);
+        let q = 'select CD.Isbn, Title, Name AS Author, Loan_id, Date_out, Date_in from (select Isbn, Title, BC.Author_id, `Name` from (select BOOK.Isbn, Title, AB.Author_id from BOOK_AUTHORS as AB join BOOK on AB.Isbn = BOOK.Isbn) as BC join AUTHORS on BC.Author_id = AUTHORS.Author_id) as CD left join BOOK_LOANS on CD.Isbn = BOOK_LOANS.Isbn';
+        let w = '';
+        //q1 = q1 + ' ' + w;
 
         if (isbn) {
-            if (w === 'WHERE Date_in IS NULL') {
-                w += ` Isbn = ${isbn}`
+            if (w === '') {
+                w += ` CD.Isbn = "${isbn}"`
             }
             else {
-                w += ` AND Isbn = ${isbn}`
+                w += ` AND CD.Isbn = "${isbn}"`
             }
         }
 
         if (title) {
-            if (w === 'WHERE Date_in IS NULL') {
+            if (w === '') {
                 w += ` UPPER(Title) LIKE UPPER("%${title}%")`;
             }
             else {
@@ -59,7 +58,7 @@ app.get('/books', async (req, res) => {
         }
 
         if (author) {
-            if (w === 'WHERE Date_in IS NULL') {
+            if (w === '') {
                 w += ` UPPER(Name) LIKE UPPER("%${author}%")`;
             }
             else {
@@ -67,12 +66,19 @@ app.get('/books', async (req, res) => {
             }
         }
 
-        if (w !== 'WHERE Date_in IS NULL') {
-            q1 += ' ';
-            q1 += w;
+        let q1 = q;
+        if (w !== '') {
+            q1 = q + ' WHERE Date_out IS NOT NULL AND Date_in IS NULL AND' + w;
+        }
+        else {
+            q1 += ' WHERE Date_out IS NOT NULL AND Date_in IS NULL';
         }
 
-        let resultBooks = [];
+        let q2 = q;
+        if (w !== '') {
+            q2 = q2 + ' WHERE' + w;
+        }
+
         let checkedOutBooks = await new Promise((resolve, reject) => {
             connection.query(q1, (error, results, fields) => {
                 if (error) {
@@ -83,22 +89,8 @@ app.get('/books', async (req, res) => {
                 }
             });
         });
-        
-        let checkedOutBooksSet = new Set();
-        for (let i = 0; i < checkedOutBooks.length; i++) {
-            resultBooks.push(checkedOutBooks[i]);
-            checkedOutBooksSet.add(checkedOutBooks[i].Isbn);
-        }
 
-        let q2;
-        if (w !== "WHERE Date_in IS NULL") {
-            q2 = "WHERE " + w.substring(21); 
-        }
-        else {
-            q2 = q1;
-        }
-
-        let allBooks = new Promise((resolve, reject) => {
+        let allBooks = await new Promise((resolve, reject) => {
             connection.query(q2, (error, results, fields) => {
                 if (error) {
                     reject(error);
@@ -109,14 +101,23 @@ app.get('/books', async (req, res) => {
             });
         });
 
-        console.log(checkedOutBooksSet);
+        let finalResults = [];
+        let inputtedBooks = new Set();
+
+        for (let i = 0; i < checkedOutBooks.length; i++) {
+            inputtedBooks.add(checkedOutBooks[i].Isbn);
+            finalResults.push(checkedOutBooks[i]);
+        }
+
         for (let i = 0; i < allBooks.length; i++) {
-            if (checkedOutBooksSet.has(allBooks[i].Isbn) === false) {
-                resultBooks.push(allBooks[i]);
+            if (inputtedBooks.has(allBooks[i].Isbn) === false) {
+                inputtedBooks.add(allBooks[i].Isbn);
+                finalResults.push(allBooks[i]);
             }
         }
 
-        return res.status(200).json({ books: resultBooks });
+        //console.log(inputtedBooks.size);
+        return res.status(200).json({ books: finalResults });
     }
     catch (error) {
         console.log(error);
