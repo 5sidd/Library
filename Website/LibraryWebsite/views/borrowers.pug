@@ -15,9 +15,41 @@ block content
                 </div>
             </div>
             <br>
+            <div class="ui primary button" onclick="showBorrowerForm()">+ Add Borrower</div>
+            <br><br>
             <div id="grid"></div>
         </body>
 
+        <div class="ui tiny modal" id="borrowerModal">
+            <div class="header">
+                Add Borrower
+            </div>
+            <div class="content">
+                <form class="ui form">
+                    <div class="field">
+                        <label class="wide">Borrower Name</label>
+                        <input type="text" name="borrowerName" placeholder="Name">
+                    </div>
+                    <br>
+                    <div class="field">
+                        <label>SSN</label>
+                        <input type="text" name="borrowerSsn" placeholder="SSN">
+                    </div>
+                    <br>
+                    <div class="field">
+                        <label>Phone Number</label>
+                        <input type="text" name="borrowerPhone" placeholder="Phone">
+                    </div>
+                    <br>
+                    <div class="field">
+                        <label>Address</label>
+                        <input type="text" name="borrowerAddress" placeholder="Address">
+                    </div>
+                    <br>
+                    <div class="ui primary button">Submit</div>
+                </form>
+            </div>  
+        </div>
     script.
         $(document).ready(function() {
             $("#borrowerbutton").removeClass("lightgrey");
@@ -51,7 +83,7 @@ block content
                     filterable: false
                 },
                 height: 680,
-                pageable: true,
+                pageable: false,
                 sortable: true,
                 navigatable: true,
                 resizable: true,
@@ -65,4 +97,10 @@ block content
                 ],
             });
         });
-        
+
+        function showBorrowerForm() {
+            console.log("showBorrowerForm")
+            $("#borrowerModal").modal({
+                autofocus: false
+            }).modal('show');
+        }        
