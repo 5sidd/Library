@@ -1,0 +1,80 @@
+extends layout
+
+block content
+    html.
+        <head>
+            <link rel="stylesheet" href="http://unpkg.com/@progress/kendo-theme-bootstrap/dist/all.css" />
+            <script src="https://kendo.cdn.telerik.com/2022.3.913/js/kendo.all.min.js"></script>
+        </head>
+        <body style="padding: 10px">
+            <div class="ui grid">
+                <div class="row">
+                    <div class="ui fifteen wide column">
+                        <h2>Loans</h2>
+                    </div>
+                </div>
+            </div>
+            <br>
+            <div id="grid"></div>
+        </body>
+
+    script.
+        $(document).ready(function() {
+            $("#loansbutton").removeClass("lightgrey");
+            $("#loansbutton").addClass("grey");
+
+            var dataSource = new kendo.data.DataSource({
+                transport: {
+                    read: {
+                        url: "http://localhost:4000/books",
+                        dataType: "json"
+                    }
+                },
+                batch: false,
+                schema: {
+                    id: "Isbn",
+                    data: function(data) {
+                        for(var i = 0; i < data.books.length; i++) {
+                            // Have some logic here for checking whether a book is checked in
+                            // Maybe add a button?
+                            data.books[i].CheckedIn = true;
+                        }
+
+                        return data.books;
+                    },
+                    model: {
+                        fields: {
+                            Isbn: { type: "string" },
+                            Title: { type: "string" },
+                            Author: { field:"Name", type: "string" },
+                            CheckedIn: {  type: "boolean" }
+                        }  
+                    }
+                }
+            });
+
+            $("#grid").kendoGrid({
+                dataSource: dataSource,
+                columnMenu: {
+                    filterable: false
+                },
+                height: 680,
+                pageable: false,
+                persistSelection: true,
+                sortable: true,
+                resizable: true,
+                filterable: true,
+                change: function (arg) {
+                    console.log(arg);
+                },
+                toolbar: [{template: '<span class="k-searchbox k-input k-input-md k-rounded-md k-input-solid k-grid-search"><span class="k-input-icon k-icon k-i-search"></span><input autocomplete="off" placeholder="Search..." title="Search..." aria-label="Search..." class="k-input-inner"></span>'}],
+                columns: [
+                    { selectable: true, width: "50px" },
+                    { field: "Isbn", title: "ISBN", width: "200px" },
+                    { field: "Title", title: "Title", width: "775px" },
+                    { field: "Author", title: "Author"},
+                    { field: "CheckedIn", title: "Checked In" }
+                ],
+            });
+        });
+        

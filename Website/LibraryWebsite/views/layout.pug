@@ -1,0 +1,53 @@
+doctype html
+
+head
+    script(src="https://kendo.cdn.telerik.com/2022.3.913/js/jquery.min.js")
+    link(rel="stylesheet" type="text/css" href="semantic/dist/semantic.min.css")
+    script(src="semantic/dist/semantic.min.js")
+    link(rel="stylesheet" href='/stylesheets/style.css')
+body
+    div(class='body-container')
+        div(class="ui divided padded grid")
+            div(class="ui two wide column")
+                h2 Library
+                br
+                button(class="ui fluid lightgrey button" id="bookbutton") Books
+                br
+                br
+                button(class="ui fluid lightgrey button" id="loansbutton") Loans
+                br
+                br
+                button(class="ui fluid lightgrey button" id="borrowerbutton") Borrowers
+                br
+                br
+                button(class="ui fluid lightgrey button" id="feesbutton") Fees
+            div(class="ui fourteen wide column")
+                br
+                block content
+
+script.
+    $(document).ready(function() {
+        $("#bookbutton").click(function () {
+            window.location.replace("/books");
+        });
+        $("#loansbutton").click(function () {
+            window.location.replace("/loans");
+        });
+        $("#borrowerbutton").click(function () {
+            window.location.replace("/borrowers");
+        });
+        $("#feesbutton").click(function () {
+            window.location.replace("/fees");
+        });
+    });
+
+style.
+    body {
+        background-color: steelblue;
+    }
+
+    .body-container {
+        background-color: white;
+        border-radius: 25px !important;
+        padding: 10px !important;
+    }

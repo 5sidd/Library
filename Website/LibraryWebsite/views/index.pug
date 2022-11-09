@@ -1,0 +1,147 @@
+extends layout
+
+block content
+    html.
+        <head>
+            <link rel="stylesheet" href="http://unpkg.com/@progress/kendo-theme-bootstrap/dist/all.css" />
+            <script src="https://kendo.cdn.telerik.com/2022.3.913/js/kendo.all.min.js"></script>
+        </head>
+        <body style="padding: 10px">
+            <div class="ui grid">
+                <div class="row">
+                    <div class="ui fifteen wide column">
+                        <h2>Books</h2>
+                    </div>
+                </div>
+            </div>
+            <br>
+            <div id="grid"></div>
+        </body>
+        <div class="ui small modal">
+            <div class="header">
+                Checkout Book
+            </div>
+            <div class="content">
+                <form class="ui form">
+                    <div class="inline field">
+                        <label>Book Title: </label>
+                        <p id="bookName"></p>
+                    </div>
+                    <br>
+                    <div class="inline fields">
+                        <div class="field">
+                            <label>Borrower:</label>
+                            <div class="ui search selection dropdown">
+                                <input type="hidden" name="borrower">
+                                <div class="default text">Borrower</div>
+                                <i class="dropdown icon"></i>
+                                <div class="menu" id="borrowerDropdownMenu">
+                                    <div class="item" data-value="1">Borrower 1</div>
+                                    <div class="item" data-value="0">Borrower 2</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <br>
+                    <button class="ui primary button">
+                        Submit
+                    </button>
+                </form>
+            </div>
+        </div>
+
+    script.
+        $(document).ready(function() {
+            $(".dropdown").dropdown();
+            $("#bookbutton").removeClass("lightgrey");
+            $("#bookbutton").addClass("grey");
+
+            $("#checkoutButton").click(function () {
+                $(".modal").modal("show");
+            });
+
+            var dataSource = new kendo.data.DataSource({
+                transport: {
+                    read: {
+                        url: "http://localhost:4000/books",
+                        dataType: "json",
+                    }
+                },
+                schema: {
+                    type: "json",
+                    data: function(data) {
+                        data = data.books;
+                        for(var i = 0; i < data.length; i++) {
+                            var book = data[i];
+                            var available = (book.Date_in == null && book.Date_out != null || book.Date_out == null);
+                            book.Availability = available ? "Yes" : "No";
+                            data[i] = book;
+                        }
+
+                        console.log(data);
+                        return data;
+                    },
+                    model: {
+                        fields: {
+                            Isbn: { type: "string" },
+                            Title: { type: "string" },
+                            Author: { type: "string" },
+                            Availability: { type: "string" }
+                        }  
+                    }
+                }
+            });
+
+            $("#grid").kendoGrid({
+                dataSource: dataSource,
+                columnMenu: {
+                    filterable: false
+                },
+                height: 680,
+                pageable: false,
+                sortable: true,
+                navigatable: true,
+                resizable: true,
+                filterable: true,
+                toolbar: [{template: '<span class="k-searchbox k-input k-input-md k-rounded-md k-input-solid k-grid-search"><span class="k-input-icon k-icon k-i-search"></span><input autocomplete="off" placeholder="Search..." title="Search..." aria-label="Search..." class="k-input-inner"></span>'}],
+                columns: [
+                    { field: "Isbn", title: "ISBN", width: "130px" },
+                    { field: "Title", title: "Title", width: "500px" },
+                    { field: "Author", title: "Author", width: "180px" },
+                    { field: "Availability", title: "Available", width: "130px" },
+                    { title: "Checkout", command: {text: "Checkout", click: showCheckoutModal} }
+                ],
+            });
+        });
+
+        function showCheckoutModal(e) {
+            e.preventDefault();
+
+            var dataItem = this.dataItem($(e.currentTarget).closest("tr"));
+            console.log(dataItem);
+            $("#bookName").html(dataItem.Title);
+
+            $(".modal").modal({
+                autofocus: false
+            }).modal("show");
+
+            getBorrowers();
+        }
+
+        function getBorrowers() {
+            $.ajax({
+                url: "http://localhost:4000/borrowers",
+                type: "GET",
+                success: function(data) {                        
+                    data = data.borrowers;
+                    console.log(data);
+                    var htmlText = "";
+                    for(var i = 0; i < data.length; i++) {
+                        var borrower = data[i];
+                        htmlText += "<div class=\"item\" data-value=\"" + borrower.Card_id +"\">" + borrower.Bname + "</div>"
+                    }
+                    console.log(htmlText);
+                    $("#borrowerDropdownMenu").html(htmlText);
+                }
+            });
+        }
