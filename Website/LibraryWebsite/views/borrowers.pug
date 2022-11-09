@@ -15,6 +15,16 @@ block content
                 </div>
             </div>
             <br>
+            <div class="ui positive message" style="display: none;">
+                <div class="header" id="successMessage">
+                </div>
+            </div>
+            <div class="ui negative message" style="display: none;">
+                <div class="header">
+                    Failed to add borrower
+                </div>
+                <p id="errorMessage"></p>
+            </div>
             <div class="ui primary button" onclick="showBorrowerForm()">+ Add Borrower</div>
             <br><br>
             <div id="grid"></div>
@@ -28,25 +38,25 @@ block content
                 <form class="ui form">
                     <div class="field">
                         <label class="wide">Borrower Name</label>
-                        <input type="text" name="borrowerName" placeholder="Name">
+                        <input type="text" name="borrowerName" id="borrowerName" placeholder="Name">
                     </div>
                     <br>
                     <div class="field">
                         <label>SSN</label>
-                        <input type="text" name="borrowerSsn" placeholder="SSN">
+                        <input type="text" name="borrowerSsn" id="borrowerSsn" placeholder="SSN">
                     </div>
                     <br>
                     <div class="field">
                         <label>Phone Number</label>
-                        <input type="text" name="borrowerPhone" placeholder="Phone">
+                        <input type="text" name="borrowerPhone" id="borrowerPhone" placeholder="Phone">
                     </div>
                     <br>
                     <div class="field">
                         <label>Address</label>
-                        <input type="text" name="borrowerAddress" placeholder="Address">
+                        <input type="text" name="borrowerAddress" id="borrowerAddress" placeholder="Address">
                     </div>
                     <br>
-                    <div class="ui primary button">Submit</div>
+                    <div class="ui primary button" onclick="submitBorrowerForm()">Submit</div>
                 </form>
             </div>  
         </div>
@@ -60,6 +70,7 @@ block content
                     read: {
                         url: "http://localhost:4000/borrowers",
                         dataType: "json",
+                        cache: false
                     }
                 },
                 schema: {
@@ -82,7 +93,7 @@ block content
                 columnMenu: {
                     filterable: false
                 },
-                height: 680,
+                height: 725,
                 pageable: false,
                 sortable: true,
                 navigatable: true,
@@ -103,4 +114,54 @@ block content
             $("#borrowerModal").modal({
                 autofocus: false
             }).modal('show');
-        }        
+        }
+
+        function submitBorrowerForm() {
+            var borrowerName = $("#borrowerName").val();
+            var borrowerSsn = $("#borrowerSsn").val();
+            var borrowerPhone = $("#borrowerPhone").val();
+            var borrowerAddress = $("#borrowerAddress").val();
+
+            let reqData = {
+                "name": borrowerName,
+                "ssn": borrowerSsn,
+                "phone": borrowerPhone,
+                "address": borrowerAddress
+            }
+
+            var jsonData = JSON.stringify(reqData);
+
+            $.ajax({
+                url: "http://localhost:4000/borrowers",
+                type: "POST",
+                data: jsonData,
+                dataType: "json",
+                contentType: "application/json; charset=utf-8", 
+                success: function(data) {
+                    $(".positive.message").show();
+                    if(!!data) {
+                        console.log(data);
+                        $("#successMessage").html(data);
+                    }
+
+                    setTimeout(function () {
+                        $(".positive.message").fadeOut();
+                        $("#successMessage").html();
+                    }, 5000);
+                },
+                error: function(data) {
+                    $(".negative.message").show();
+                    if(!!data) {
+                        $("#errorMessage").html(data.responseJSON.error);
+                    }
+
+                    setTimeout(function () {
+                        $(".negative.message").fadeOut();
+                        $("#errorMessage").html();
+                    }, 5000);
+                }
+            }).always(function () {
+                $("#borrowerModal").modal('hide');
+                $("#grid").data("kendoGrid").dataSource.read();
+            });
+        }

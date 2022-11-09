@@ -26,7 +26,7 @@ block content
             var dataSource = new kendo.data.DataSource({
                 transport: {
                     read: {
-                        url: "http://localhost:4000/books",
+                        url: "http://localhost:4000/bookloans",
                         dataType: "json"
                     }
                 },
@@ -34,18 +34,19 @@ block content
                 schema: {
                     id: "Isbn",
                     data: function(data) {
-                        for(var i = 0; i < data.books.length; i++) {
+                        console.log("Data", data);
+
+                        for(var i = 0; i < data.loans.length; i++) {
                             // Have some logic here for checking whether a book is checked in
-                            // Maybe add a button?
-                            data.books[i].CheckedIn = true;
+                            data.loans[i].CheckedIn = true;
                         }
 
-                        return data.books;
+                        return data.loans;
                     },
                     model: {
                         fields: {
                             Isbn: { type: "string" },
-                            Title: { type: "string" },
+                            Bname: { type: "string" },
                             Author: { field:"Name", type: "string" },
                             CheckedIn: {  type: "boolean" }
                         }  
@@ -58,7 +59,7 @@ block content
                 columnMenu: {
                     filterable: false
                 },
-                height: 680,
+                height: 800,
                 pageable: false,
                 persistSelection: true,
                 sortable: true,
@@ -71,9 +72,10 @@ block content
                 columns: [
                     { selectable: true, width: "50px" },
                     { field: "Isbn", title: "ISBN", width: "200px" },
-                    { field: "Title", title: "Title", width: "775px" },
+                    { field: "Title", title: "Title", width: "500px" },
                     { field: "Author", title: "Author"},
-                    { field: "CheckedIn", title: "Checked In" }
+                    { field: "CheckedIn", title: "Checked In" },
+                    { command:"Check In" }
                 ],
             });
         });

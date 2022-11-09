@@ -150,6 +150,7 @@ app.get('/borrowers', async (req, res) => {
 //Add new borrower to the database
 app.post('/borrowers', async (req, res) => {
     try {
+        console.log(req.body);
         const { ssn, name, address, phone } = req.body;
 
         function generateCardID() {
@@ -579,7 +580,7 @@ app.patch('/checkin', async (req, res) => {
 app.get('/bookloans', async (req, res) => {
     try {
         const { isbn, cardID, bname } = req.query;
-        let q1 = 'select BORROWER.Card_id, Bname, Loan_id, Isbn, Date_out, Due_date from (select * from BOOK_LOANS where Date_in is null) as A join BORROWER on BORROWER.Card_id = A.Card_id';
+        let q1 = 'select BORROWER.Card_id, Bname, Loan_id, A.Isbn, Date_out, Due_date, book.Title from (select * from BOOK_LOANS where Date_in is null) as A join BORROWER on BORROWER.Card_id = A.Card_id join BOOK book on A.Isbn = book.Isbn';
         let q2 = 'WHERE';
 
         if (isbn) {

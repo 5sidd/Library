@@ -73,7 +73,7 @@ block content
                         data = data.books;
                         for(var i = 0; i < data.length; i++) {
                             var book = data[i];
-                            var available = (book.Date_in == null && book.Date_out != null || book.Date_out == null);
+                            var available = !(book.Date_out != null && book.Date_in == null);
                             book.Availability = available ? "Yes" : "No";
                             data[i] = book;
                         }
@@ -97,7 +97,7 @@ block content
                 columnMenu: {
                     filterable: false
                 },
-                height: 680,
+                height: 1000,
                 pageable: false,
                 sortable: true,
                 navigatable: true,
