@@ -69,7 +69,7 @@ block content
                 persistSelection: true,
                 sortable: true,
                 toolbar: [{template: '<span class="k-searchbox k-input k-input-md k-rounded-md k-input-solid k-grid-search"><span class="k-input-icon k-icon k-i-search"></span><input autocomplete="off" placeholder="Search..." title="Search..." aria-label="Search..." class="k-input-inner"></span>'},
-                    {template: '&nbsp;<div class="ui button" onclick="bulkCheckIn()">Bulk Check In</div>'}],
+                    {template: '&nbsp;<div class="ui primary button" onclick="bulkCheckIn()">Bulk Check In</div>'}],
                 columns: [
                     { selectable: true, width: "50px" },
                     { field: "Isbn", title: "ISBN", width: "200px" },
@@ -87,43 +87,42 @@ block content
             e.preventDefault();
 
             var dataItem = this.dataItem($(e.currentTarget).closest("tr"));
-            console.log("dataItem", dataItem);
 
             var jsonData = {
                     "loanID": dataItem.Loan_id
                 }            
-                $.ajax({
-                    url: "http://localhost:4000/checkin",
-                    type: "POST",
-                    data: JSON.stringify(jsonData),
-                    dataType: "json",
-                    contentType: "application/json; charset=utf-8", 
-                    success: function(data) {
-                        $(".positive.message").show();
-                        if(!!data) {
-                            console.log(data);
-                            $("#successMessage").html(data.message);
-                        }
-
-                        setTimeout(function () {
-                            $(".positive.message").fadeOut();
-                            $("#successMessage").html();
-                        }, 5000);
-                    },
-                    error: function(data) {
-                        $(".negative.message").show();
-                        if(!!data) {
-                            $("#errorMessage").html(data.responseJSON.error);
-                        }
-
-                        setTimeout(function () {
-                            $(".negative.message").fadeOut();
-                            $("#errorMessage").html();
-                        }, 5000);
+            $.ajax({
+                url: "http://localhost:4000/checkin",
+                type: "POST",
+                data: JSON.stringify(jsonData),
+                dataType: "json",
+                contentType: "application/json; charset=utf-8", 
+                success: function(data) {
+                    $(".positive.message").show();
+                    if(!!data) {
+                        console.log(data);
+                        $("#successMessage").html(data.message);
                     }
-                }).always(function () {
-                    $("#grid").data("kendoGrid").dataSource.read();
-                });
+
+                    setTimeout(function () {
+                        $(".positive.message").fadeOut();
+                        $("#successMessage").html();
+                    }, 5000);
+                },
+                error: function(data) {
+                    $(".negative.message").show();
+                    if(!!data) {
+                        $("#errorMessage").html(data.responseJSON.error);
+                    }
+
+                    setTimeout(function () {
+                        $(".negative.message").fadeOut();
+                        $("#errorMessage").html();
+                    }, 5000);
+                }
+            }).always(function () {
+                $("#grid").data("kendoGrid").dataSource.read();
+            });
         }
 
         function bulkCheckIn() {
