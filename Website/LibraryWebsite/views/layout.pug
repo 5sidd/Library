@@ -20,7 +20,7 @@ body
                 button(class="ui fluid lightgrey button" id="borrowerbutton") Borrowers
                 br
                 br
-                button(class="ui fluid lightgrey button" id="feesbutton") Fees
+                button(class="ui fluid lightgrey button" id="finesbutton") Fines
             div(class="ui fourteen wide column")
                 br
                 block content
@@ -36,8 +36,8 @@ script.
         $("#borrowerbutton").click(function () {
             window.location.replace("/borrowers");
         });
-        $("#feesbutton").click(function () {
-            window.location.replace("/fees");
+        $("#finesbutton").click(function () {
+            window.location.replace("/fines");
         });
     });
 

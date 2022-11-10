@@ -21,6 +21,13 @@ connection.query(`use Library`);
 
 app.use(express.json());
 
+// Disable CORS policy to allow to run with frontend
+app.use(function(req, res, next) {
+    res.header("Access-Control-Allow-Origin", "*");
+    res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+    next();
+});
+
 //API Routes
 
 //Get/filter books by book ISBN, book title, book author
@@ -607,7 +614,7 @@ app.get('/bookloans', async (req, res) => {
     }
 });
 
-app.patch('/updateloans', async (req, res) => {
+app.post('/updateloans', async (req, res) => {
     try {
         function getSQLDate(date) {
             return new Date(
@@ -728,7 +735,7 @@ app.patch('/updateloans', async (req, res) => {
     }
 });
 
-app.patch('/submitpayment/:id', async (req, res) => {
+app.post('/submitpayment/:id', async (req, res) => {
     try {
         const { id: loanID } = req.params;
 
@@ -853,7 +860,7 @@ app.get('/fines', async (req, res) => {
         return res.status(500).json({ error });
     }
 });
-const port = process.env.PORT || 3000;
+const port = process.env.PORT || 4000;
 const start = async () => {
     try {
         await new Promise((resolve, reject) => {

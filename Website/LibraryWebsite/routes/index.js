@@ -18,8 +18,8 @@ router.get('/borrowers', function(req, res, next) {
     res.render('borrowers', { title: 'Express' });
 });
 
-router.get('/fees', function(req, res, next) {
-    res.render('fees', { title: 'Express' });
+router.get('/fines', function(req, res, next) {
+    res.render('fines', { title: 'Express' });
 });
 
 module.exports = router;
