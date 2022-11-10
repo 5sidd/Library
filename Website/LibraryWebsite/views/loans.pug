@@ -15,6 +15,16 @@ block content
                 </div>
             </div>
             <br>
+            <div class="ui positive message" style="display: none;">
+                <div class="header" id="successMessage">
+                </div>
+            </div>
+            <div class="ui negative message" style="display: none;">
+                <div class="header">
+                    Failed to add borrower
+                </div>
+                <p id="errorMessage"></p>
+            </div>
             <div id="grid"></div>
         </body>
 
@@ -32,51 +42,131 @@ block content
                 },
                 batch: false,
                 schema: {
-                    id: "Isbn",
                     data: function(data) {
-                        console.log("Data", data);
-
-                        for(var i = 0; i < data.loans.length; i++) {
-                            // Have some logic here for checking whether a book is checked in
-                            data.loans[i].CheckedIn = true;
-                        }
+                        console.log(data);
 
                         return data.loans;
                     },
                     model: {
+                        id: "Loan_id",
                         fields: {
+                            Loan_id: { type:"string" },
                             Isbn: { type: "string" },
                             Bname: { type: "string" },
-                            Author: { field:"Name", type: "string" },
-                            CheckedIn: {  type: "boolean" }
-                        }  
+                            Borrower: { field: "Bname", type: "string"},
+                            Date_out: {type: "date"},
+                            Due_date: {type: "date"},
+                            Date_in: {type: "date"}
+                        }
                     }
                 }
             });
 
             $("#grid").kendoGrid({
                 dataSource: dataSource,
-                columnMenu: {
-                    filterable: false
-                },
                 height: 800,
                 pageable: false,
                 persistSelection: true,
                 sortable: true,
-                resizable: true,
-                filterable: true,
-                change: function (arg) {
-                    console.log(arg);
-                },
-                toolbar: [{template: '<span class="k-searchbox k-input k-input-md k-rounded-md k-input-solid k-grid-search"><span class="k-input-icon k-icon k-i-search"></span><input autocomplete="off" placeholder="Search..." title="Search..." aria-label="Search..." class="k-input-inner"></span>'}],
+                toolbar: [{template: '<span class="k-searchbox k-input k-input-md k-rounded-md k-input-solid k-grid-search"><span class="k-input-icon k-icon k-i-search"></span><input autocomplete="off" placeholder="Search..." title="Search..." aria-label="Search..." class="k-input-inner"></span>'},
+                    {template: '&nbsp;<div class="ui button" onclick="bulkCheckIn()">Bulk Check In</div>'}],
                 columns: [
                     { selectable: true, width: "50px" },
                     { field: "Isbn", title: "ISBN", width: "200px" },
                     { field: "Title", title: "Title", width: "500px" },
-                    { field: "Author", title: "Author"},
-                    { field: "CheckedIn", title: "Checked In" },
-                    { command:"Check In" }
+                    { field: "Borrower", title: "Borrower"},
+                    { field: "Date_out", title: "Date Out", format: "{0:MM/dd/yyyy}" },
+                    { field: "Due_date", title: "Due Date", format: "{0:MM/dd/yyyy}" },
+                    { command: { text: "Check In", click: checkInBook }, title: ""}
                 ],
             });
+
         });
+
+        function checkInBook(e) {
+            e.preventDefault();
+
+            var dataItem = this.dataItem($(e.currentTarget).closest("tr"));
+            console.log("dataItem", dataItem);
+
+            var jsonData = {
+                    "loanID": dataItem.Loan_id
+                }            
+                $.ajax({
+                    url: "http://localhost:4000/checkin",
+                    type: "POST",
+                    data: JSON.stringify(jsonData),
+                    dataType: "json",
+                    contentType: "application/json; charset=utf-8", 
+                    success: function(data) {
+                        $(".positive.message").show();
+                        if(!!data) {
+                            console.log(data);
+                            $("#successMessage").html(data.message);
+                        }
+
+                        setTimeout(function () {
+                            $(".positive.message").fadeOut();
+                            $("#successMessage").html();
+                        }, 5000);
+                    },
+                    error: function(data) {
+                        $(".negative.message").show();
+                        if(!!data) {
+                            $("#errorMessage").html(data.responseJSON.error);
+                        }
+
+                        setTimeout(function () {
+                            $(".negative.message").fadeOut();
+                            $("#errorMessage").html();
+                        }, 5000);
+                    }
+                }).always(function () {
+                    $("#grid").data("kendoGrid").dataSource.read();
+                });
+        }
+
+        function bulkCheckIn() {
+            var keyNames = $("#grid").data("kendoGrid").selectedKeyNames();
+            
+            var success = true;
+            var message = "Successful Check In!";
+            keyNames.forEach(function (Loan_id) {     
+                var jsonData = {
+                    "loanID": Loan_id
+                }            
+                $.ajax({
+                    url: "http://localhost:4000/checkin",
+                    type: "POST",
+                    data: JSON.stringify(jsonData),
+                    dataType: "json",
+                    async: false,
+                    contentType: "application/json; charset=utf-8",
+                    error: function(data) {
+                        success = false;
+                        message = data.responseJSON.error
+                    }
+                }).always(function () {
+                    $("#grid").data("kendoGrid").dataSource.read();
+                });
+            });
+
+            if(success) {
+                $(".positive.message").show();
+                $("#successMessage").html(message);
+
+                setTimeout(function () {
+                    $(".positive.message").fadeOut();
+                    $("#successMessage").html();
+                }, 5000);
+            } else {
+                $(".negative.message").show();
+                $("#errorMessage").html(message);
+
+                setTimeout(function () {
+                    $(".negative.message").fadeOut();
+                    $("#errorMessage").html();
+                }, 5000);
+            }
+        }
         

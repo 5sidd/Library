@@ -15,6 +15,16 @@ block content
                 </div>
             </div>
             <br>
+            <div class="ui positive message" style="display: none;">
+                <div class="header" id="successMessage">
+                </div>
+            </div>
+            <div class="ui negative message" style="display: none;">
+                <div class="header">
+                    Failed to checkout book
+                </div>
+                <p id="errorMessage"></p>
+            </div>
             <div id="grid"></div>
         </body>
         <div class="ui small modal">
@@ -32,25 +42,25 @@ block content
                         <div class="field">
                             <label>Borrower:</label>
                             <div class="ui search selection dropdown">
-                                <input type="hidden" name="borrower">
+                                <input type="hidden" name="borrower" id="borrowerValue">
                                 <div class="default text">Borrower</div>
                                 <i class="dropdown icon"></i>
                                 <div class="menu" id="borrowerDropdownMenu">
-                                    <div class="item" data-value="1">Borrower 1</div>
-                                    <div class="item" data-value="0">Borrower 2</div>
                                 </div>
                             </div>
                         </div>
                     </div>
                     <br>
-                    <button class="ui primary button">
+                    <div class="ui primary button" onclick="checkoutBook()">
                         Submit
-                    </button>
+                    </div>
                 </form>
             </div>
         </div>
 
     script.
+        var checkoutBookIsbn;
+
         $(document).ready(function() {
             $(".dropdown").dropdown();
             $("#bookbutton").removeClass("lightgrey");
@@ -120,6 +130,8 @@ block content
             var dataItem = this.dataItem($(e.currentTarget).closest("tr"));
             console.log(dataItem);
             $("#bookName").html(dataItem.Title);
+            
+            checkoutBookIsbn = dataItem.Isbn;
 
             $(".modal").modal({
                 autofocus: false
@@ -134,14 +146,60 @@ block content
                 type: "GET",
                 success: function(data) {                        
                     data = data.borrowers;
-                    console.log(data);
                     var htmlText = "";
                     for(var i = 0; i < data.length; i++) {
                         var borrower = data[i];
                         htmlText += "<div class=\"item\" data-value=\"" + borrower.Card_id +"\">" + borrower.Bname + "</div>"
                     }
-                    console.log(htmlText);
                     $("#borrowerDropdownMenu").html(htmlText);
                 }
+            });
+        }
+
+        function checkoutBook() {
+            var borrowerId = $("#borrowerValue").val();
+            console.log("BorrowerValue:", borrowerId);
+
+            var jsonData = {
+                "isbn": checkoutBookIsbn,
+                "borrowerID": borrowerId
+            };
+
+            var json = JSON.stringify(jsonData);
+            console.log("JsonData:", jsonData);
+            console.log("Json:", json);
+
+            $.ajax({
+                url: "http://localhost:4000/checkout",
+                type: "POST",
+                data: json,
+                dataType: "json",
+                contentType: "application/json; charset=utf-8", 
+                success: function(data) {
+                    $(".positive.message").show();
+                    if(!!data) {
+                        console.log(data);
+                        $("#successMessage").html(data.message);
+                    }
+
+                    setTimeout(function () {
+                        $(".positive.message").fadeOut();
+                        $("#successMessage").html();
+                    }, 5000);
+                },
+                error: function(data) {
+                    $(".negative.message").show();
+                    if(!!data) {
+                        $("#errorMessage").html(data.responseJSON.error);
+                    }
+
+                    setTimeout(function () {
+                        $(".negative.message").fadeOut();
+                        $("#errorMessage").html();
+                    }, 5000);
+                }
+            }).always(function () {
+                $(".modal").modal('hide');
+                $("#grid").data("kendoGrid").dataSource.read();
             });
         }

@@ -424,7 +424,7 @@ app.post('/checkout', async (req, res) => {
 });
 
 //Check a book in
-app.patch('/checkin', async (req, res) => {
+app.post('/checkin', async (req, res) => {
     try {
         const { loanID } = req.body;
 
