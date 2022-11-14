@@ -77,12 +77,14 @@ block content
                     type: "json",
                     data: "borrowers",
                     model: {
+                        id: "Ssn",
                         fields: {
+                            Ssn: { type: "string" },
                             CardID: { field: "Card_id", type: "string" },
                             Ssn: { type:"string" },
                             Name: { field: "Bname", type: "string" },
                             Address: { type: "string" },
-                            Phone: { type: "string" }
+                            Phone: { type: "string" },
                         }   
                     }
                 }
@@ -102,7 +104,8 @@ block content
                 toolbar: [{template: '<span class="k-searchbox k-input k-input-md k-rounded-md k-input-solid k-grid-search"><span class="k-input-icon k-icon k-i-search"></span><input autocomplete="off" placeholder="Search..." title="Search..." aria-label="Search..." class="k-input-inner"></span>'}],
                 columns: [
                     { field: "CardID", title: "CardID", width: "200px" },
-                    { field: "Name", title: "Name", width: "775px" },
+                    { field: "Name", title: "Name", width:"300px" },
+                    { field: "Ssn", title: "SSN", width: "100px" },
                     { field: "Address", title: "Address"},
                     { field: "Phone", title: "Phone" }
                 ],
