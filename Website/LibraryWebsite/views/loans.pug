@@ -29,6 +29,8 @@ block content
         </body>
 
     script.
+        var searchArray = [];
+
         $(document).ready(function() {
             $("#loansbutton").removeClass("lightgrey");
             $("#loansbutton").addClass("grey");
@@ -44,8 +46,94 @@ block content
                 schema: {
                     data: function(data) {
                         console.log(data);
+                        data = data.loans;
 
-                        return data.loans;
+                        // Search handling
+                        if(searchArray != null && searchArray.length > 0) {
+                            var searchData = [];
+                            for(var i = 0; i < data.length; i++) {
+                                var loan = data[i];
+                                var search = $.merge([], searchArray);
+                                
+                                // Loan_id handling
+                                const idIdx = $.inArray(loan.Loan_id.toString(), search);
+                                if(idIdx > -1) {
+                                    search.splice(idIdx, 1);
+                                    searchData.push(loan);
+                                    continue;
+                                }
+
+                                // Isbn handling
+                                const isbnIdx = $.inArray(loan.Isbn.toString(), search);
+                                if(isbnIdx > -1) {
+                                    search.splice(isbnIdx, 1);
+                                    searchData.push(loan);
+                                    continue;
+                                }
+
+                                // Borrower handling
+                                var split = loan.Bname.toLowerCase().split(/\s+/).filter(Boolean);
+                                //console.log("Split:", split);
+                            
+                                var added = false;
+                                for(var j = 0; j < search.length; j++) {
+                                    for(var k = 0; k < split.length; k++) {
+                                        if(search[j] == split[k]) {
+                                            search.splice(j, 1);
+                                            searchData.push(loan);
+                                            added = true;
+                                            break;
+                                        }
+                                    }
+                                }
+                                if(added) {
+                                    continue;
+                                }
+
+                                // Title handling
+                                added = false;
+                                split = loan.Title.toLowerCase().split(/\s+/).filter(Boolean);
+                                var isInString = new Array(split.length).fill(false);
+
+                                console.log("isInString", isInString);
+                                for(var j = 0; j < split.length; j++) {
+                                    if(split[j].indexOf(search[0]) > -1) {
+                                        isInString[j] = true;
+                                        console.log("Filter:", search[0]);
+                                        search.splice(0, 1);
+                                    }
+                                }
+
+                                var check = false;
+                                for(var j = 0; j < isInString.length - 1; j++) {
+                                    if(isInString[j]) {
+                                        check = true;
+                                        continue;
+                                    } else if (!isInString[j] && check) {
+                                        var trueFound = false;
+                                        for(var k = j + 1; k < isInString.length; k++) {
+                                            if(isInString[k]) {
+                                                trueFound = true;
+                                            }
+                                        }
+
+                                        if(trueFound) {
+                                            check = false;
+                                        }
+                                    }
+                                }
+
+                                if(inOrder && search.length === 0) {
+                                    console.log(isInString);
+                                    searchData.push(loan);
+                                }
+                            }
+
+                            console.log("Search data: ", searchData);
+                            return searchData;
+                        }
+
+                        return data;
                     },
                     model: {
                         id: "Loan_id",
@@ -68,7 +156,7 @@ block content
                 pageable: false,
                 persistSelection: true,
                 sortable: true,
-                toolbar: [{template: '<span class="k-searchbox k-input k-input-md k-rounded-md k-input-solid k-grid-search"><span class="k-input-icon k-icon k-i-search"></span><input autocomplete="off" placeholder="Search..." title="Search..." aria-label="Search..." class="k-input-inner"></span>'},
+                toolbar: [{template: '<span class="k-searchbox k-input k-input-md k-rounded-md k-input-solid"><span class="k-input-icon k-icon k-i-search"></span><input autocomplete="off" placeholder="Search..." title="Search..." aria-label="Search..." class="k-input-inner" id="searchbar"></span>'},
                     {template: '&nbsp;<div class="ui primary button" onclick="bulkCheckIn()">Bulk Check In</div>'}],
                 columns: [
                     { selectable: true, width: "50px" },
@@ -80,6 +168,12 @@ block content
                     { field: "Due_date", title: "Due Date", format: "{0:MM/dd/yyyy}" },
                     { command: { text: "Check In", click: checkInBook }, title: ""}
                 ],
+            }).after(function () {
+                $("#searchbar").keyup(function(e) {
+                    e.preventDefault();
+                    searchArray = $("#searchbar").val().toLowerCase().split(/\s+/).filter(Boolean);
+                    $("#grid").data("kendoGrid").dataSource.read();
+                });
             });
 
         });

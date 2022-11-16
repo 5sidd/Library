@@ -60,6 +60,7 @@ block content
 
     script.
         var checkoutBookIsbn;
+        var searchArray;
 
         $(document).ready(function() {
             $(".dropdown").dropdown();
@@ -88,6 +89,81 @@ block content
                             data[i] = book;
                         }
 
+                        // Search handling
+                        if(searchArray != null && searchArray.length > 0) {
+                            var searchData = [];
+                            for(var i = 0; i < data.length; i++) {
+                                var book = data[i];
+                                var search = $.merge([], searchArray);
+                                // Isbn handling
+                                const isbnIdx = $.inArray(book.Isbn.toString(), search);
+                                if(isbnIdx > -1) {
+                                    search.splice(isbnIdx, 1);
+                                    searchData.push(book);
+                                    continue;
+                                }
+
+                                // Author handling
+                                var split = book.Author.toLowerCase().split(' ');
+                                //console.log("Split:", split);
+                            
+                                var added = false;
+                                for(var j = 0; j < search.length; j++) {
+                                    for(var k = 0; k < split.length; k++) {
+                                        if(search[j] == split[k]) {
+                                            search.splice(j, 1);
+                                            searchData.push(book);
+                                            added = true;
+                                            break;
+                                        }
+                                    }
+                                }
+                                if(added) {
+                                    continue;
+                                }
+
+                                // Title handling
+                                added = false;
+                                split = book.Title.toLowerCase().split(' ');
+                                var isInString = new Array(split.length).fill(false);
+
+                                console.log("isInString", isInString);
+                                for(var j = 0; j < split.length; j++) {
+                                    if(split[j].indexOf(search[0]) > -1) {
+                                        isInString[j] = true;
+                                        search.splice(0, 1);
+                                    }
+                                }
+
+                                var check = false;
+                                for(var j = 0; j < isInString.length - 1; j++) {
+                                    if(isInString[j]) {
+                                        check = true;
+                                        continue;
+                                    } else if (!isInString[j] && check) {
+                                        var trueFound = false;
+                                        for(var k = j + 1; k < isInString.length; k++) {
+                                            if(isInString[k]) {
+                                                trueFound = true;
+                                            }
+                                        }
+
+                                        if(trueFound) {
+                                            check = false;
+                                        }
+                                    }
+                                }
+
+                                if(check && search.length == 0) {
+                                    console.log(isInString);
+                                    searchData.push(book);
+                                }
+                            }
+
+                            console.log("Search data: ", searchData);
+                            return searchData;
+                        }
+
                         console.log(data);
                         return data;
                     },
@@ -113,7 +189,7 @@ block content
                 navigatable: true,
                 resizable: true,
                 filterable: true,
-                toolbar: [{template: '<span class="k-searchbox k-input k-input-md k-rounded-md k-input-solid k-grid-search"><span class="k-input-icon k-icon k-i-search"></span><input autocomplete="off" placeholder="Search..." title="Search..." aria-label="Search..." class="k-input-inner"></span>'}],
+                toolbar: [{template: '<span class="k-searchbox k-input k-input-md k-rounded-md k-input-solid"><span class="k-input-icon k-icon k-i-search"></span><input autocomplete="off" placeholder="Search..." title="Search..." aria-label="Search..." class="k-input-inner" id="searchbar"></span>'}],
                 columns: [
                     { field: "Isbn", title: "ISBN", width: "130px" },
                     { field: "Title", title: "Title", width: "500px" },
@@ -121,6 +197,12 @@ block content
                     { field: "Availability", title: "Available", width: "130px" },
                     { title: "Checkout", command: {text: "Checkout", click: showCheckoutModal} }
                 ],
+            }).after(function () {
+                $("#searchbar").keyup(function(e) {
+                    e.preventDefault();
+                    searchArray = $("#searchbar").val().toLowerCase().split(/\s+/).filter(Boolean);
+                    $("#grid").data("kendoGrid").dataSource.read();
+                });
             });
         });
 
