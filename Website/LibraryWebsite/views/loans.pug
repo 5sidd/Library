@@ -45,7 +45,6 @@ block content
                 batch: false,
                 schema: {
                     data: function(data) {
-                        console.log(data);
                         data = data.loans;
 
                         // Search handling
@@ -73,7 +72,6 @@ block content
 
                                 // Borrower handling
                                 var split = loan.Bname.toLowerCase().split(/\s+/).filter(Boolean);
-                                //console.log("Split:", split);
                             
                                 var added = false;
                                 for(var j = 0; j < search.length; j++) {
@@ -95,11 +93,9 @@ block content
                                 split = loan.Title.toLowerCase().split(/\s+/).filter(Boolean);
                                 var isInString = new Array(split.length).fill(false);
 
-                                console.log("isInString", isInString);
                                 for(var j = 0; j < split.length; j++) {
                                     if(split[j].indexOf(search[0]) > -1) {
                                         isInString[j] = true;
-                                        console.log("Filter:", search[0]);
                                         search.splice(0, 1);
                                     }
                                 }
@@ -124,12 +120,9 @@ block content
                                 }
 
                                 if(inOrder && search.length === 0) {
-                                    console.log(isInString);
                                     searchData.push(loan);
                                 }
                             }
-
-                            console.log("Search data: ", searchData);
                             return searchData;
                         }
 
@@ -195,7 +188,6 @@ block content
                 success: function(data) {
                     $(".positive.message").show();
                     if(!!data) {
-                        console.log(data);
                         $("#successMessage").html(data.message);
                     }
 

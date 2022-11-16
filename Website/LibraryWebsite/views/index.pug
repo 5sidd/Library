@@ -105,7 +105,6 @@ block content
 
                                 // Author handling
                                 var split = book.Author.toLowerCase().split(' ');
-                                //console.log("Split:", split);
                             
                                 var added = false;
                                 for(var j = 0; j < search.length; j++) {
@@ -127,7 +126,6 @@ block content
                                 split = book.Title.toLowerCase().split(' ');
                                 var isInString = new Array(split.length).fill(false);
 
-                                console.log("isInString", isInString);
                                 for(var j = 0; j < split.length; j++) {
                                     if(split[j].indexOf(search[0]) > -1) {
                                         isInString[j] = true;
@@ -155,16 +153,12 @@ block content
                                 }
 
                                 if(check && search.length == 0) {
-                                    console.log(isInString);
                                     searchData.push(book);
                                 }
                             }
-
-                            console.log("Search data: ", searchData);
                             return searchData;
                         }
 
-                        console.log(data);
                         return data;
                     },
                     model: {
@@ -210,7 +204,6 @@ block content
             e.preventDefault();
 
             var dataItem = this.dataItem($(e.currentTarget).closest("tr"));
-            console.log(dataItem);
             $("#bookName").html(dataItem.Title);
             
             checkoutBookIsbn = dataItem.Isbn;
@@ -240,7 +233,6 @@ block content
 
         function checkoutBook() {
             var borrowerId = $("#borrowerValue").val();
-            console.log("BorrowerValue:", borrowerId);
 
             var jsonData = {
                 "isbn": checkoutBookIsbn,
@@ -248,8 +240,6 @@ block content
             };
 
             var json = JSON.stringify(jsonData);
-            console.log("JsonData:", jsonData);
-            console.log("Json:", json);
 
             $.ajax({
                 url: "http://localhost:4000/checkout",
@@ -260,7 +250,6 @@ block content
                 success: function(data) {
                     $(".positive.message").show();
                     if(!!data) {
-                        console.log(data);
                         $("#successMessage").html(data.message);
                     }
 

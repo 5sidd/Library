@@ -97,7 +97,6 @@ block content
                 success: function(data) {
                     $(".positive.message").show();
                     if(!!data) {
-                        console.log(data);
                         $("#successMessage").html(data.message);
                     }
 
@@ -126,7 +125,6 @@ block content
             e.preventDefault();
 
             var dataItem = this.dataItem($(e.currentTarget).closest("tr"));
-            console.log(dataItem);
 
             $.ajax({
                 url: "http://localhost:4000/submitpayment/" + dataItem.Loan_id,
@@ -134,7 +132,6 @@ block content
                 success: function(data) {
                     $(".positive.message").show();
                     if(!!data) {
-                        console.log(data);
                         $("#successMessage").html(data.message);
                     }
 
