@@ -46,6 +46,7 @@ block content
                 schema: {
                     data: function(data) {
                         data = data.loans;
+                        console.log(data);
 
                         // Search handling
                         if(searchArray != null && searchArray.length > 0) {
@@ -68,6 +69,15 @@ block content
                                 const isbnIdx = $.inArray(loan.Isbn.toString(), search);
                                 if(isbnIdx > -1 && $.inArray(loan.Isbn, searchIsbns) === -1) {
                                     search.splice(isbnIdx, 1);
+                                    searchData.push(loan);
+                                    searchIsbns.push(loan.Isbn);
+                                    continue;
+                                }
+
+                                // Isbn handling
+                                const cardIdx = $.inArray(loan.Card_id.toString(), search);
+                                if(cardIdx > -1 && $.inArray(loan.Isbn, searchIsbns) === -1) {
+                                    search.splice(cardIdx, 1);
                                     searchData.push(loan);
                                     searchIsbns.push(loan.Isbn);
                                     continue;
@@ -149,6 +159,7 @@ block content
                             Isbn: { type: "string" },
                             Bname: { type: "string" },
                             Borrower: { field: "Bname", type: "string"},
+                            Card_id: {type: "string"},
                             Date_out: {type: "date"},
                             Due_date: {type: "date"},
                             Date_in: {type: "date"}
@@ -171,6 +182,7 @@ block content
                     { field: "Isbn", title: "ISBN", width: "200px" },
                     { field: "Title", title: "Title", width: "500px" },
                     { field: "Borrower", title: "Borrower"},
+                    { field: "Card_id", title: "Card ID", width: "175px"},
                     { field: "Date_out", title: "Date Out", format: "{0:MM/dd/yyyy}" },
                     { field: "Due_date", title: "Due Date", format: "{0:MM/dd/yyyy}" },
                     { command: { text: "Check In", click: checkInBook }, title: ""}
