@@ -50,23 +50,26 @@ block content
                         // Search handling
                         if(searchArray != null && searchArray.length > 0) {
                             var searchData = [];
+                            var searchIsbns = [];
                             for(var i = 0; i < data.length; i++) {
                                 var loan = data[i];
                                 var search = $.merge([], searchArray);
                                 
                                 // Loan_id handling
                                 const idIdx = $.inArray(loan.Loan_id.toString(), search);
-                                if(idIdx > -1) {
+                                if(idIdx > -1 && $.inArray(loan.Isbn, searchIsbns) === -1) {
                                     search.splice(idIdx, 1);
                                     searchData.push(loan);
+                                    searchIsbns.push(loan.Isbn);
                                     continue;
                                 }
 
                                 // Isbn handling
                                 const isbnIdx = $.inArray(loan.Isbn.toString(), search);
-                                if(isbnIdx > -1) {
+                                if(isbnIdx > -1 && $.inArray(loan.Isbn, searchIsbns) === -1) {
                                     search.splice(isbnIdx, 1);
                                     searchData.push(loan);
+                                    searchIsbns.push(loan.Isbn);
                                     continue;
                                 }
 
@@ -76,15 +79,24 @@ block content
                                 var added = false;
                                 for(var j = 0; j < search.length; j++) {
                                     for(var k = 0; k < split.length; k++) {
-                                        if(search[j] == split[k]) {
+                                        if(search[j] == split[k] && $.inArray(loan.Isbn, searchIsbns) === -1) {
                                             search.splice(j, 1);
-                                            searchData.push(loan);
+                                            searchData.unshift(loan);
                                             added = true;
+                                            saerchIsbns.push(loan.Isbn);
                                             break;
                                         }
                                     }
                                 }
                                 if(added) {
+                                    continue;
+                                }
+
+                                // Check book if title is length 1
+                                if(search.length == 1 && loan.Title.toLowerCase().indexOf(search[0]) > -1
+                                    && $.inArray(loan.Isbn, serachIsbns) === -1) {
+                                    searchData.push(loan);
+                                    searchIsbns.push(loan.Isbn);
                                     continue;
                                 }
 
@@ -119,8 +131,10 @@ block content
                                     }
                                 }
 
-                                if(inOrder && search.length === 0) {
+                                if(check && search.length === 0
+                                    && $.inArray(loan.Isbn, searchIsbns) === -1) {
                                     searchData.push(loan);
+                                    searchIsbns.push(loan.Isbn);
                                 }
                             }
                             return searchData;

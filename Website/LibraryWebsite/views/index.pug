@@ -92,14 +92,16 @@ block content
                         // Search handling
                         if(searchArray != null && searchArray.length > 0) {
                             var searchData = [];
+                            var searchIsbns = [];
                             for(var i = 0; i < data.length; i++) {
                                 var book = data[i];
                                 var search = $.merge([], searchArray);
                                 // Isbn handling
                                 const isbnIdx = $.inArray(book.Isbn.toString(), search);
-                                if(isbnIdx > -1) {
+                                if(isbnIdx > -1 && $.inArray(book.Isbn, searchIsbns) === -1) {
                                     search.splice(isbnIdx, 1);
                                     searchData.push(book);
+                                    searchIsbns.push(book.Isbn);
                                     continue;
                                 }
 
@@ -109,15 +111,24 @@ block content
                                 var added = false;
                                 for(var j = 0; j < search.length; j++) {
                                     for(var k = 0; k < split.length; k++) {
-                                        if(search[j] == split[k]) {
+                                        if(search[j] == split[k] && $.inArray(book.Isbn, searchIsbns) === -1) {
                                             search.splice(j, 1);
-                                            searchData.push(book);
+                                            searchData.unshift(book);
                                             added = true;
+                                            searchIsbns.push(book.Isbn);
                                             break;
                                         }
                                     }
                                 }
                                 if(added) {
+                                    continue;
+                                }
+
+                                // Check book if title is length 1
+                                if(search.length == 1 && book.Title.toLowerCase().indexOf(search[0]) > -1
+                                    && $.inArray(book.Isbn, searchIsbns) === -1) {
+                                    searchData.push(book);
+                                    searchIsbns.push(book.Isbn);
                                     continue;
                                 }
 
@@ -132,7 +143,7 @@ block content
                                         search.splice(0, 1);
                                     }
                                 }
-
+                                
                                 var check = false;
                                 for(var j = 0; j < isInString.length - 1; j++) {
                                     if(isInString[j]) {
@@ -152,8 +163,10 @@ block content
                                     }
                                 }
 
-                                if(check && search.length == 0) {
-                                    searchData.push(book);
+                                if(check && search.length == 0 && $.inArray(book.Isbn, searchIsbns) === -1) {
+                                    saerchIsbns.push(book.Isbn);
+                                    searchIsbns.push(book);
+                                    continue;
                                 }
                             }
                             return searchData;
