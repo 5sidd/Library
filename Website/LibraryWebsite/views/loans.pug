@@ -79,7 +79,7 @@ block content
                                 var added = false;
                                 for(var j = 0; j < search.length; j++) {
                                     for(var k = 0; k < split.length; k++) {
-                                        if(search[j] == split[k] && $.inArray(loan.Isbn, searchIsbns) === -1) {
+                                        if(split[k].indexOf(search[j]) > -1 && $.inArray(loan.Isbn, searchIsbns) === -1) {
                                             search.splice(j, 1);
                                             searchData.unshift(loan);
                                             added = true;
