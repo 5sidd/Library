@@ -115,7 +115,6 @@ block content
             }).after(function () {
                 $("#showPaidFines").change(function () {
                     showPaidFines = !showPaidFines;
-                    console.log(showPaidFines);
                     $("#grid").data("kendoGrid").dataSource.read();
                 }) 
             });
