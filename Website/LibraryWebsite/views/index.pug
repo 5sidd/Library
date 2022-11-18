@@ -224,6 +224,7 @@ block content
             console.log($("#grid").data("kendoGrid").dataSource);
             for(var i = 0; i < dataBackup.length; i++) {
                 let book = dataBackup[i];
+                var debug = book.Title == "Clara Callan: A Novel";
 
                 var search = $.merge([], searchArray);
                 // Isbn handling
@@ -235,27 +236,6 @@ block content
                     continue;
                 }
 
-                // Author handling
-                var split = book.Author.toLowerCase().split(' ');
-            
-                var added = false;
-                for(var j = 0; j < search.length; j++) {
-                    for(var k = 0; k < split.length; k++) {
-                        if(split[k].indexOf(search[j]) > -1 && $.inArray(book.Isbn, searchIsbns) === -1) {
-                            search.splice(j, 1);
-                            if(search.length === 0) {
-                                searchData.push(book);
-                                added = true;
-                                searchIsbns.push(book.Isbn);
-                                break;
-                            }
-                        }
-                    }
-                }
-                if(added) {
-                    continue;
-                }
-                
                 // Check book if title is length 1
                 split = book.Title.toLowerCase().split(' ');
                 if(search.length == 1 && book.Title.toLowerCase().indexOf(search[0]) > -1
@@ -266,7 +246,7 @@ block content
                 }
 
                 // Title handling
-                added = false;
+                var added = false;
                 split = book.Title.toLowerCase().split(' ');
                 var isInString = new Array(split.length).fill(false);
 
@@ -301,6 +281,30 @@ block content
                     searchIsbns.push(book.Isbn);
                     searchData.unshift(book);
                     continue;
+                }
+
+                // Author handling
+                var split = book.Author.toLowerCase().split(' ');
+                added = false;
+                for(var j = 0; j < search.length; j++) {
+                    for(var k = 0; k < split.length; k++) {
+                        if(split[k].indexOf(search[j]) > -1 && $.inArray(book.Isbn, searchIsbns) === -1) {
+                            search.splice(j, 1);
+                            if(search.length === 0) {
+                                searchData.push(book);
+                                added = true;
+                                searchIsbns.push(book.Isbn);
+                                break;
+                            }
+                        }
+                    }
+                }
+                if(added) {
+                    continue;
+                }
+
+                if(debug) {
+                    console.log(search);
                 }
             }
             $("#grid").data("kendoGrid").dataSource.data(searchData);

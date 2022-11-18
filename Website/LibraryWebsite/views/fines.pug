@@ -110,7 +110,7 @@ block content
                     { field: "Fine_amt", title: "Fine Amount", format: "{0:c}" },
                     { field: "Date_in", title: "Date In", format: "{0:MM/dd/yyyy}" },
                     { field: "Paid", title: "Paid", format: "{0:MM/dd/yyyy}" },
-                    { command: {text: "Submit Payment", click: submitPayment}, title: ""}
+                    { command: {text: "Submit Payment", click: submitPayment}, title: "", width: "150px"}
                 ],
             }).after(function () {
                 $("#showPaidFines").change(function () {

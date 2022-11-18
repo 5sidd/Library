@@ -206,6 +206,7 @@ block content
                 var loan = dataBackup[i];
                 var search = $.merge([], searchArray);
                 
+
                 // Loan_id handling
                 const idIdx = $.inArray(loan.Loan_id.toString(), search);
                 if(idIdx > -1 && $.inArray(loan.Isbn, searchIsbns) === -1) {
@@ -230,27 +231,6 @@ block content
                     search.splice(cardIdx, 1);
                     searchData.push(loan);
                     searchIsbns.push(loan.Isbn);
-                    continue;
-                }
-
-                // Borrower handling
-                var split = loan.Borrower.toLowerCase().split(/\s+/).filter(Boolean);
-            
-                var added = false;
-                for(var j = 0; j < search.length; j++) {
-                    for(var k = 0; k < split.length; k++) {
-                        if(split[k].indexOf(search[j]) > -1 && $.inArray(loan.Isbn, searchIsbns) === -1) {
-                            search.splice(j, 1);
-                            if(search.length === 0) {
-                                searchData.push(loan);
-                                added = true;
-                                searchIsbns.push(loan.Isbn);
-                                break;
-                            }
-                        }
-                    }
-                }
-                if(added) {
                     continue;
                 }
 
@@ -290,6 +270,7 @@ block content
                         if(trueFound) {
                             check = false;
                         }
+                        break;
                     }
                 }
 
@@ -297,6 +278,27 @@ block content
                     && $.inArray(loan.Isbn, searchIsbns) === -1) {
                     searchData.unshift(loan);
                     searchIsbns.push(loan.Isbn);
+                }
+
+                // Borrower handling
+                var split = loan.Borrower.toLowerCase().split(/\s+/).filter(Boolean);
+            
+                var added = false;
+                for(var j = 0; j < search.length; j++) {
+                    for(var k = 0; k < split.length; k++) {
+                        if(split[k].indexOf(search[j]) > -1 && $.inArray(loan.Isbn, searchIsbns) === -1) {
+                            search.splice(j, 1);
+                            if(search.length === 0) {
+                                searchData.push(loan);
+                                added = true;
+                                searchIsbns.push(loan.Isbn);
+                                break;
+                            }
+                        }
+                    }
+                }
+                if(added) {
+                    continue;
                 }
             }
             $("#grid").data("kendoGrid").dataSource.data(searchData);
