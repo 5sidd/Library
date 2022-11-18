@@ -30,6 +30,7 @@ block content
 
     script.
         var searchArray = [];
+        var dataBackup = [];
 
         $(document).ready(function() {
             $("#loansbutton").removeClass("lightgrey");
@@ -39,117 +40,15 @@ block content
                 transport: {
                     read: {
                         url: "http://localhost:4000/bookloans",
-                        dataType: "json"
+                        dataType: "json",
+                        cache: true
                     }
                 },
                 batch: false,
                 schema: {
                     data: function(data) {
                         data = data.loans;
-                        console.log(data);
-
-                        // Search handling
-                        if(searchArray != null && searchArray.length > 0) {
-                            var searchData = [];
-                            var searchIsbns = [];
-                            for(var i = 0; i < data.length; i++) {
-                                var loan = data[i];
-                                var search = $.merge([], searchArray);
-                                
-                                // Loan_id handling
-                                const idIdx = $.inArray(loan.Loan_id.toString(), search);
-                                if(idIdx > -1 && $.inArray(loan.Isbn, searchIsbns) === -1) {
-                                    search.splice(idIdx, 1);
-                                    searchData.push(loan);
-                                    searchIsbns.push(loan.Isbn);
-                                    continue;
-                                }
-
-                                // Isbn handling
-                                const isbnIdx = $.inArray(loan.Isbn.toString(), search);
-                                if(isbnIdx > -1 && $.inArray(loan.Isbn, searchIsbns) === -1) {
-                                    search.splice(isbnIdx, 1);
-                                    searchData.push(loan);
-                                    searchIsbns.push(loan.Isbn);
-                                    continue;
-                                }
-
-                                // Isbn handling
-                                const cardIdx = $.inArray(loan.Card_id.toString(), search);
-                                if(cardIdx > -1 && $.inArray(loan.Isbn, searchIsbns) === -1) {
-                                    search.splice(cardIdx, 1);
-                                    searchData.push(loan);
-                                    searchIsbns.push(loan.Isbn);
-                                    continue;
-                                }
-
-                                // Borrower handling
-                                var split = loan.Bname.toLowerCase().split(/\s+/).filter(Boolean);
-                            
-                                var added = false;
-                                for(var j = 0; j < search.length; j++) {
-                                    for(var k = 0; k < split.length; k++) {
-                                        if(split[k].indexOf(search[j]) > -1 && $.inArray(loan.Isbn, searchIsbns) === -1) {
-                                            search.splice(j, 1);
-                                            searchData.unshift(loan);
-                                            added = true;
-                                            searchIsbns.push(loan.Isbn);
-                                            break;
-                                        }
-                                    }
-                                }
-                                if(added) {
-                                    continue;
-                                }
-
-                                // Check book if title is length 1
-                                if(search.length == 1 && loan.Title.toLowerCase().indexOf(search[0]) > -1
-                                    && $.inArray(loan.Isbn, searchIsbns) === -1) {
-                                    searchData.push(loan);
-                                    searchIsbns.push(loan.Isbn);
-                                    continue;
-                                }
-
-                                // Title handling
-                                added = false;
-                                split = loan.Title.toLowerCase().split(/\s+/).filter(Boolean);
-                                var isInString = new Array(split.length).fill(false);
-
-                                for(var j = 0; j < split.length; j++) {
-                                    if(split[j].indexOf(search[0]) > -1) {
-                                        isInString[j] = true;
-                                        search.splice(0, 1);
-                                    }
-                                }
-
-                                var check = false;
-                                for(var j = 0; j < isInString.length - 1; j++) {
-                                    if(isInString[j]) {
-                                        check = true;
-                                        continue;
-                                    } else if (!isInString[j] && check) {
-                                        var trueFound = false;
-                                        for(var k = j + 1; k < isInString.length; k++) {
-                                            if(isInString[k]) {
-                                                trueFound = true;
-                                            }
-                                        }
-
-                                        if(trueFound) {
-                                            check = false;
-                                        }
-                                    }
-                                }
-
-                                if(check && search.length === 0
-                                    && $.inArray(loan.Isbn, searchIsbns) === -1) {
-                                    searchData.push(loan);
-                                    searchIsbns.push(loan.Isbn);
-                                }
-                            }
-                            return searchData;
-                        }
-
+                        dataBackup = data;
                         return data;
                     },
                     model: {
@@ -191,7 +90,11 @@ block content
                 $("#searchbar").keyup(function(e) {
                     e.preventDefault();
                     searchArray = $("#searchbar").val().toLowerCase().split(/\s+/).filter(Boolean);
-                    $("#grid").data("kendoGrid").dataSource.read();
+                    if(searchArray.length === 0) {
+                        $("#grid").data("kendoGrid").dataSource.read();
+                    } else {
+                        search();
+                    }
                 });
             });
 
@@ -295,3 +198,104 @@ block content
             }
         }
         
+        function search() {
+            var searchData = [];
+            var searchIsbns = [];
+            for(var i = 0; i < dataBackup.length; i++) {
+                var loan = dataBackup[i];
+                var search = $.merge([], searchArray);
+                
+                // Loan_id handling
+                const idIdx = $.inArray(loan.Loan_id.toString(), search);
+                if(idIdx > -1 && $.inArray(loan.Isbn, searchIsbns) === -1) {
+                    search.splice(idIdx, 1);
+                    searchData.push(loan);
+                    searchIsbns.push(loan.Isbn);
+                    continue;
+                }
+
+                // Isbn handling
+                const isbnIdx = $.inArray(loan.Isbn.toString(), search);
+                if(isbnIdx > -1 && $.inArray(loan.Isbn, searchIsbns) === -1) {
+                    search.splice(isbnIdx, 1);
+                    searchData.push(loan);
+                    searchIsbns.push(loan.Isbn);
+                    continue;
+                }
+
+                // Isbn handling
+                const cardIdx = $.inArray(loan.Card_id.toString(), search);
+                if(cardIdx > -1 && $.inArray(loan.Isbn, searchIsbns) === -1) {
+                    search.splice(cardIdx, 1);
+                    searchData.push(loan);
+                    searchIsbns.push(loan.Isbn);
+                    continue;
+                }
+
+                // Borrower handling
+                var split = loan.Borrower.toLowerCase().split(/\s+/).filter(Boolean);
+            
+                var added = false;
+                for(var j = 0; j < search.length; j++) {
+                    for(var k = 0; k < split.length; k++) {
+                        if(split[k].indexOf(search[j]) > -1 && $.inArray(loan.Isbn, searchIsbns) === -1) {
+                            search.splice(j, 1);
+                            searchData.push(loan);
+                            added = true;
+                            searchIsbns.push(loan.Isbn);
+                            break;
+                        }
+                    }
+                }
+                if(added) {
+                    continue;
+                }
+
+                // Check book if title is length 1
+                if(search.length == 1 && loan.Title.toLowerCase().indexOf(search[0]) > -1
+                    && $.inArray(loan.Isbn, searchIsbns) === -1) {
+                    searchData.push(loan);
+                    searchIsbns.push(loan.Isbn);
+                    continue;
+                }
+
+                // Title handling
+                added = false;
+                split = loan.Title.toLowerCase().split(/\s+/).filter(Boolean);
+                var isInString = new Array(split.length).fill(false);
+
+                for(var j = 0; j < split.length; j++) {
+                    if(split[j].indexOf(search[0]) > -1) {
+                        isInString[j] = true;
+                        search.splice(0, 1);
+                    }
+                }
+
+                var check = false;
+                for(var j = 0; j < isInString.length - 1; j++) {
+                    if(isInString[j]) {
+                        check = true;
+                        continue;
+                    } else if (!isInString[j] && check) {
+                        var trueFound = false;
+                        for(var k = j + 1; k < isInString.length; k++) {
+                            if(isInString[k]) {
+                                trueFound = true;
+                            }
+                        }
+
+                        if(trueFound) {
+                            check = false;
+                        }
+                    }
+                }
+
+                if(check && search.length === 0
+                    && $.inArray(loan.Isbn, searchIsbns) === -1) {
+                    searchData.unshift(loan);
+                    searchIsbns.push(loan.Isbn);
+                }
+            }
+            $("#grid").data("kendoGrid").dataSource.data(searchData);
+            $("#grid").data("kendoGrid").refresh();
+        }

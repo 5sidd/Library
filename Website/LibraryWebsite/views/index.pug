@@ -61,6 +61,7 @@ block content
     script.
         var checkoutBookIsbn;
         var searchArray;
+        var dataBackup;
 
         $(document).ready(function() {
             $(".dropdown").dropdown();
@@ -76,10 +77,15 @@ block content
                     read: {
                         url: "http://localhost:4000/books",
                         dataType: "json",
+                        cache: true
                     }
                 },
+                pageSize: 50,
+                page: 1,
                 schema: {
-                    type: "json",
+                    total: function (data) {
+                        return data.books.length;
+                    },
                     data: function(data) {
                         data = data.books;
                         for(var i = 0; i < data.length; i++) {
@@ -89,92 +95,12 @@ block content
                             data[i] = book;
                         }
 
-                        // Search handling
-                        if(searchArray != null && searchArray.length > 0) {
-                            var searchData = [];
-                            var searchIsbns = [];
-                            for(var i = 0; i < data.length; i++) {
-                                var book = data[i];
-                                var search = $.merge([], searchArray);
-                                // Isbn handling
-                                const isbnIdx = $.inArray(book.Isbn.toString(), search);
-                                if(isbnIdx > -1 && $.inArray(book.Isbn, searchIsbns) === -1) {
-                                    search.splice(isbnIdx, 1);
-                                    searchData.push(book);
-                                    searchIsbns.push(book.Isbn);
-                                    continue;
-                                }
-
-                                // Author handling
-                                var split = book.Author.toLowerCase().split(' ');
-                            
-                                var added = false;
-                                for(var j = 0; j < search.length; j++) {
-                                    for(var k = 0; k < split.length; k++) {
-                                        if(search[j] == split[k] && $.inArray(book.Isbn, searchIsbns) === -1) {
-                                            search.splice(j, 1);
-                                            searchData.unshift(book);
-                                            added = true;
-                                            searchIsbns.push(book.Isbn);
-                                            break;
-                                        }
-                                    }
-                                }
-                                if(added) {
-                                    continue;
-                                }
-
-                                // Check book if title is length 1
-                                if(search.length == 1 && book.Title.toLowerCase().indexOf(search[0]) > -1
-                                    && $.inArray(book.Isbn, searchIsbns) === -1) {
-                                    searchData.push(book);
-                                    searchIsbns.push(book.Isbn);
-                                    continue;
-                                }
-
-                                // Title handling
-                                added = false;
-                                split = book.Title.toLowerCase().split(' ');
-                                var isInString = new Array(split.length).fill(false);
-
-                                for(var j = 0; j < split.length; j++) {
-                                    if(split[j].indexOf(search[0]) > -1) {
-                                        isInString[j] = true;
-                                        search.splice(0, 1);
-                                    }
-                                }
-                                
-                                var check = false;
-                                for(var j = 0; j < isInString.length - 1; j++) {
-                                    if(isInString[j]) {
-                                        check = true;
-                                        continue;
-                                    } else if (!isInString[j] && check) {
-                                        var trueFound = false;
-                                        for(var k = j + 1; k < isInString.length; k++) {
-                                            if(isInString[k]) {
-                                                trueFound = true;
-                                            }
-                                        }
-
-                                        if(trueFound) {
-                                            check = false;
-                                        }
-                                    }
-                                }
-
-                                if(check && search.length == 0 && $.inArray(book.Isbn, searchIsbns) === -1) {
-                                    searchIsbns.push(book.Isbn);
-                                    searchIsbns.push(book);
-                                    continue;
-                                }
-                            }
-                            return searchData;
-                        }
+                        dataBackup = data;
 
                         return data;
                     },
                     model: {
+                        id: 'Isbn',
                         fields: {
                             Isbn: { type: "string" },
                             Title: { type: "string" },
@@ -190,8 +116,8 @@ block content
                 columnMenu: {
                     filterable: false
                 },
-                height: 1000,
-                pageable: false,
+                height: 800,
+                pageable: true,
                 sortable: true,
                 navigatable: true,
                 resizable: true,
@@ -208,7 +134,11 @@ block content
                 $("#searchbar").keyup(function(e) {
                     e.preventDefault();
                     searchArray = $("#searchbar").val().toLowerCase().split(/\s+/).filter(Boolean);
-                    $("#grid").data("kendoGrid").dataSource.read();
+                    if(searchArray.length === 0) {
+                        $("#grid").data("kendoGrid").dataSource.read();
+                    } else {
+                        search();
+                    }
                 });
             });
         });
@@ -286,4 +216,91 @@ block content
                 $(".modal").modal('hide');
                 $("#grid").data("kendoGrid").dataSource.read();
             });
+        }
+
+        function search() {
+            var searchData = [];
+            var searchIsbns = [];
+            console.log($("#grid").data("kendoGrid").dataSource);
+            for(var i = 0; i < dataBackup.length; i++) {
+                let book = dataBackup[i];
+
+                var search = $.merge([], searchArray);
+                // Isbn handling
+                const isbnIdx = $.inArray(book.Isbn.toString(), search);
+                if(isbnIdx > -1 && $.inArray(book.Isbn, searchIsbns) === -1) {
+                    search.splice(isbnIdx, 1);
+                    searchData.push(book);
+                    searchIsbns.push(book.Isbn);
+                    continue;
+                }
+
+                // Author handling
+                var split = book.Author.toLowerCase().split(' ');
+            
+                var added = false;
+                for(var j = 0; j < search.length; j++) {
+                    for(var k = 0; k < split.length; k++) {
+                        if(search[j] == split[k] && $.inArray(book.Isbn, searchIsbns) === -1) {
+                            search.splice(j, 1);
+                            searchData.push(book);
+                            added = true;
+                            searchIsbns.push(book.Isbn);
+                            break;
+                        }
+                    }
+                }
+                if(added) {
+                    continue;
+                }
+                
+                // Check book if title is length 1
+                split = book.Title.toLowerCase().split(' ');
+                if(search.length == 1 && book.Title.toLowerCase().indexOf(search[0]) > -1
+                    && $.inArray(book.Isbn, searchIsbns) === -1) {
+                    searchData.push(book);
+                    searchIsbns.push(book.Isbn);
+                    continue;
+                }
+
+                // Title handling
+                added = false;
+                split = book.Title.toLowerCase().split(' ');
+                var isInString = new Array(split.length).fill(false);
+
+                for(var j = 0; j < split.length; j++) {
+                    if(split[j].indexOf(search[0]) > -1) {
+                        isInString[j] = true;
+                        search.splice(0, 1);
+                    }
+                }
+
+                var check = false;
+                for(var j = 0; j < isInString.length - 1; j++) {
+                    if(isInString[j]) {
+                        check = true;
+                        continue;
+                    } else if (!isInString[j] && check) {
+                        var trueFound = false;
+                        for(var k = j + 1; k < isInString.length; k++) {
+                            if(isInString[k]) {
+                                trueFound = true;
+                            }
+                        }
+
+                        if(trueFound) {
+                            check = false;
+                        }
+                        break;
+                    }
+                }
+
+                if(check && search.length === 0 && $.inArray(book.Isbn, searchIsbns) === -1) {
+                    searchIsbns.push(book.Isbn);
+                    searchData.unshift(book);
+                    continue;
+                }
+            }
+            $("#grid").data("kendoGrid").dataSource.data(searchData);
+            $("#grid").data("kendoGrid").refresh();
         }
