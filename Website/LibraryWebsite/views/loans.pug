@@ -223,7 +223,7 @@ block content
                     continue;
                 }
 
-                // Isbn handling
+                // Card_id handling
                 const cardIdx = $.inArray(loan.Card_id.toString(), search);
                 if(cardIdx > -1 && $.inArray(loan.Isbn, searchIsbns) === -1) {
                     search.splice(cardIdx, 1);
@@ -240,10 +240,12 @@ block content
                     for(var k = 0; k < split.length; k++) {
                         if(split[k].indexOf(search[j]) > -1 && $.inArray(loan.Isbn, searchIsbns) === -1) {
                             search.splice(j, 1);
-                            searchData.push(loan);
-                            added = true;
-                            searchIsbns.push(loan.Isbn);
-                            break;
+                            if(search.length === 0) {
+                                searchData.push(loan);
+                                added = true;
+                                searchIsbns.push(loan.Isbn);
+                                break;
+                            }
                         }
                     }
                 }

@@ -846,6 +846,8 @@ app.get('/fines', async (req, res) => {
             q = q + ' ' + w;
         }
 
+        q = q + " GROUP BY Card_id, Loan_id";
+
         let fines = await new Promise((resolve, reject) => {
             connection.query(q, (error, results, fields) => {
                 if (error) {

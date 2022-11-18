@@ -25,10 +25,19 @@ block content
                 </div>
                 <p id="errorMessage"></p>
             </div>
+            <div>
+                <div class="ui checkbox">
+                    <input type="checkbox" id="showPaidFines" checked="checked">
+                    <label>Show paid fines</label>
+                </div>
+            </div>
+            <br>
             <div id="grid"></div>
         </body>
 
     script.
+        var showPaidFines = true;
+
         $(document).ready(function() {
             $("#finesbutton").removeClass("lightgrey");
             $("#finesbutton").addClass("grey");
@@ -43,7 +52,21 @@ block content
                 schema: {
                     type: "json",
                     data: function(data) {
-                        return data.fines;
+                        data = data.fines;
+
+                        if(!showPaidFines) {
+                            var notPaidFines = [];
+                            for(var i = 0; i < data.length; i++) {
+                                var fine = data[i];
+                                if(fine.Date_in == null) {
+                                    notPaidFines.push(fine);
+                                }
+                            }
+
+                            return notPaidFines;
+                        }
+
+                        return data;
                     },
                     model: {
                         fields: {
@@ -59,7 +82,8 @@ block content
                             Paid: { type:"date" }
                         }  
                     }
-                }
+                },
+                sort: { field: "Card_id", dir: "asc" }
             });
 
             $("#grid").kendoGrid({
@@ -80,6 +104,7 @@ block content
                     { field: "Isbn", title: "ISBN" },
                     { field: "Title", title: "Title" },
                     { field: "Borrower", title: "Borrower" },
+                    { field: "Card_id", title: "Card ID" },
                     { field: "Date_out", title: "Date Out", format: "{0:MM/dd/yyyy}" },
                     { field: "Due_date", title: "Due Date", format: "{0:MM/dd/yyyy}" },
                     { field: "Fine_amt", title: "Fine Amount", format: "{0:c}" },
@@ -87,6 +112,12 @@ block content
                     { field: "Paid", title: "Paid", format: "{0:MM/dd/yyyy}" },
                     { command: {text: "Submit Payment", click: submitPayment}, title: ""}
                 ],
+            }).after(function () {
+                $("#showPaidFines").change(function () {
+                    showPaidFines = !showPaidFines;
+                    console.log(showPaidFines);
+                    $("#grid").data("kendoGrid").dataSource.read();
+                }) 
             });
         });
         
