@@ -203,8 +203,8 @@ block content
             var dataItem = this.dataItem($(e.currentTarget).closest("tr"));
 
             var jsonData = {
-                    "loanID": dataItem.Loan_id
-                }            
+                "loanID": dataItem.Loan_id
+            }            
             $.ajax({
                 url: "http://localhost:4000/checkin",
                 type: "POST",
@@ -241,6 +241,18 @@ block content
         function bulkCheckIn() {
             var keyNames = $("#grid").data("kendoGrid").selectedKeyNames();
             
+            if(keyNames == null || keyNames.length === 0) {
+                $(".negative.message").show();
+                $("#errorMessage").html("No books selected");
+
+                setTimeout(function () {
+                    $(".negative.message").fadeOut();
+                    $("#errorMessage").html();
+                }, 5000);
+
+                return;
+            }
+
             var success = true;
             var message = "Successful Check In!";
             keyNames.forEach(function (Loan_id) {     
@@ -260,6 +272,7 @@ block content
                     }
                 }).always(function () {
                     $("#grid").data("kendoGrid").dataSource.read();
+                    $("#grid").data("kendoGrid").clearSelection();
                 });
             });
 
