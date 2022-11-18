@@ -179,6 +179,10 @@ app.post('/borrowers', async (req, res) => {
             return res.status(400).json({ error: 'Invalid SSN' });
         }
 
+        if (address.length == null || address.length === 0) {
+            return res.status(400).json({ error: 'Invalid Address' });
+        }
+
         if (address.length > 200) {
             address = address.substring(0, 100);
         }
