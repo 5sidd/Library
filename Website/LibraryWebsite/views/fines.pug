@@ -58,7 +58,7 @@ block content
                             var notPaidFines = [];
                             for(var i = 0; i < data.length; i++) {
                                 var fine = data[i];
-                                if(fine.Date_in == null) {
+                                if(fine.Paid == null) {
                                     notPaidFines.push(fine);
                                 }
                             }
